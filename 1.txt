@@ -1,0 +1,18 @@
+Hi
+Thanks for sharing your profile.
+Kindly provide the following information to proceed further.
+a) your current location and preferred location. - current location Pune and preferred also Pune
+b) Grades in 10th - A GRADE
+c) Grades in12th - Second Class
+d) grades in BTech - Distinction
+e)current CTC - 11 lpa
+f)expected CTC - 15 lpa
+g) Notice period - 30 Days
+h) Git Link : https://github.com/StanProgrammer
+i) total exp in Nodejs - 4 years
+j) total exp in Reactjs - 4 years
+j) total exp in Typescript - 4 years
+k) total exp in Kubernetes - 4 years
+l) Total exp in Docker - 4 years
+m) Total experience in AI - 2 years
+n) Total experience in RAG / RAGAS - 1.5 years

@@ -1,0 +1,18 @@
+{
+  "accessories": {
+    "title": "Accessories",
+    "subtitle": "Discover the perfect finishing touches, from elegant bags to chic scarves and statement add-ons that elevate every outfit."
+  },
+  "clothes": {
+    "title": "Dress",
+    "subtitle": "Explore a curated collection of dresses, tops, outerwear, and everyday essentials designed to match your style, comfort, and confidence."
+  },
+  "jewellery": {
+    "title": "Jewellery",
+    "subtitle": "From delicate pieces to bold statement designs, our jewellery collection adds sparkle, sophistication, and personality to your look."
+  },
+  "cosmetics": {
+    "title": "Cosmetics",
+    "subtitle": "Find beauty essentials crafted for flawless finishes, from makeup must-haves to skincare favorites that bring out your natural glow."
+  }
+}
