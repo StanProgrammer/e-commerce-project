@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import outwear from '../../assets/outwear.png'
 import casual from '../../assets/casual.png'
 import formal from '../../assets/formal.png'
@@ -8,18 +9,21 @@ const cards = [
         image: outwear,
         trend: '2025 Trends',
         title: "Outerwear",
+        path: "/shop?category=clothes",
     },
     {
         id: 2,
         image: casual,
         trend: '2025 Trends',
         title:"Casual Wear",
+        path: "/shop?category=clothes",
     },
     {
         id: 3,
         image: formal,
         trend: '2025 Trends',
         title: "Formal Wear",
+        path: "/shop?category=clothes",
     },
 ]
 const ClothesSection = () => {
@@ -32,7 +36,7 @@ const ClothesSection = () => {
                     <div className='hero__content'>
                         <p>{card.trend}</p>
                         <h4>{card.title}</h4>
-                        <a href="#">Shop Now</a>
+                        <Link to={card.path}>Shop Now</Link>
                     </div>
                    
                 </div>

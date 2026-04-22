@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ScrollToTop from "./components/ScrollToTop";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -46,6 +47,7 @@ function App() {
       />
 
       <Navbar />
+      <ScrollToTop />
       <Outlet />
       <Footer />
     </>

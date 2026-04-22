@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import PrdCard from "./PrdCard";
 import ShopFilters from "./ShopFilters";
 import Pagination from "../../components/Pagination";
@@ -16,16 +17,42 @@ const filters = {
 };
 
 const ShopPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filtersState, setFiltersState] = useState({
-    category: "all",
-    color: "all",
-    priceRange: "",
+    category: searchParams.get("category") || "all",
+    color: searchParams.get("color") || "all",
+    priceRange: searchParams.get("priceRange") || "",
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
   const PRODUCTS_PER_PAGE = 8;
 
   const { category, color, priceRange } = filtersState;
+
+  useEffect(() => {
+    setFiltersState({
+      category: searchParams.get("category") || "all",
+      color: searchParams.get("color") || "all",
+      priceRange: searchParams.get("priceRange") || "",
+    });
+    setCurrentPage(Number(searchParams.get("page")) || 1);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+
+    if (category !== "all") nextParams.set("category", category);
+    if (color !== "all") nextParams.set("color", color);
+    if (priceRange) nextParams.set("priceRange", priceRange);
+    if (currentPage > 1) nextParams.set("page", String(currentPage));
+
+    const currentParamsString = searchParams.toString();
+    const nextParamsString = nextParams.toString();
+
+    if (currentParamsString !== nextParamsString) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [category, color, priceRange, currentPage, searchParams, setSearchParams]);
 
   /* ---------------- PRICE PARSING ---------------- */
   const [minPrice, maxPrice] = useMemo(() => {
@@ -74,7 +101,15 @@ const ShopPage = () => {
           {/* FILTERS */}
           <ShopFilters
             filteredProducts={filtersState}
-            setFilteredProducts={setFiltersState}
+            setFilteredProducts={(updater) => {
+              setFiltersState((prev) => {
+                const nextState =
+                  typeof updater === "function" ? updater(prev) : updater;
+
+                return nextState;
+              });
+              setCurrentPage(1);
+            }}
             clearFilters={clearFilters}
             filters={filters}
           />

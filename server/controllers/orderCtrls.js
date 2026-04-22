@@ -29,7 +29,7 @@ lineItems.push({
     currency: "usd",
     product_data: {
       name: dbProduct.name,
-      images: [dbProduct.image],
+      images: dbProduct.images?.length ? [dbProduct.images[0]] : [],
       metadata: {
         productId: dbProduct._id.toString(),
       },

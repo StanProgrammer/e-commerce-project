@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { addToCart } from "../../store/features/cart/cartSlice";
 import ImageWithSkeleton from "../../components/ImageWithSkeleton";
 import toast from "react-hot-toast";
+import { getProductPrimaryImage } from "../../utils/productImage";
 
 const PrdCard = ({ products }) => {
   const dispatch = useDispatch();
@@ -23,7 +24,7 @@ const PrdCard = ({ products }) => {
     <div className="relative">
       <Link to={`/shop/${product._id}`}>
         <ImageWithSkeleton
-          src={product.image}
+          src={getProductPrimaryImage(product)}
           alt={product.name || "product-image"}
           className="max-h-96 md:h-64 w-full object-cover transition-all duration-300 hover:scale-105"
         />

@@ -2,6 +2,7 @@ import React from "react";
 import OrderSummary from "../pages/Shop/OrderSummary";
 import { useDispatch } from "react-redux";
 import { removeFromCart, updateQuantity } from "../store/features/cart/cartSlice";
+import { getProductPrimaryImage } from "../utils/productImage";
 
 const CartModal = ({ products, isOpen, onClose }) => {
   const dispatch = useDispatch();
@@ -62,7 +63,7 @@ const CartModal = ({ products, isOpen, onClose }) => {
                     >
                       0{index + 1}
                     </span>
-                    <img src={product.image} alt={product.name} className="size-12 object-cover mr-4 " />
+                    <img src={getProductPrimaryImage(product)} alt={product.name} className="size-12 object-cover mr-4 " />
                     <div>
                       <h5 className="font-semibold">{product.name}</h5>
                       <p className="text-sm text-gray-800 font-semibold">${Number(product.price)}</p>

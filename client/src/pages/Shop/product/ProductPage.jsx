@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Ratings from "../../../components/Ratings";
 import { useDispatch } from "react-redux";
@@ -6,6 +6,7 @@ import { useGetSingleProductQuery } from "../../../store/features/products/produ
 import { addToCart } from "../../../store/features/cart/cartSlice";
 import ReviewCard from "../reviews/ReviewCard";
 import toast from "react-hot-toast";
+import { getProductImages } from "../../../utils/productImage";
 
 const ProductPage = () => {
   const { id } = useParams();
@@ -16,6 +17,8 @@ const ProductPage = () => {
 
   const dispatch = useDispatch();
   const singleProduct = product?.product || {};
+  const productImages = useMemo(() => getProductImages(singleProduct), [singleProduct]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const productReviews = product?.reviews || [];
   const reviewCount = productReviews.length;
   const savings =
@@ -40,6 +43,25 @@ const ProductPage = () => {
     toast.success(`${product.name} added to cart`, {
       id: product._id,
     });
+  };
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [singleProduct._id]);
+
+  const hasMultipleImages = productImages.length > 1;
+  const activeImage = productImages[activeImageIndex] || "";
+
+  const handlePreviousImage = () => {
+    setActiveImageIndex((currentIndex) =>
+      currentIndex === 0 ? productImages.length - 1 : currentIndex - 1
+    );
+  };
+
+  const handleNextImage = () => {
+    setActiveImageIndex((currentIndex) =>
+      currentIndex === productImages.length - 1 ? 0 : currentIndex + 1
+    );
   };
 
   if (isLoading) {
@@ -121,12 +143,58 @@ const ProductPage = () => {
                 </span>
               ) : null}
 
+              {hasMultipleImages ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePreviousImage}
+                    className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg text-text-dark shadow-md transition hover:bg-primary hover:text-white sm:left-4"
+                    aria-label="Show previous product image"
+                  >
+                    <i className="ri-arrow-left-s-line"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg text-text-dark shadow-md transition hover:bg-primary hover:text-white sm:right-4"
+                    aria-label="Show next product image"
+                  >
+                    <i className="ri-arrow-right-s-line"></i>
+                  </button>
+                </>
+              ) : null}
+
               <img
-                src={singleProduct.image}
+                src={activeImage}
                 alt={singleProduct.name || "Product image"}
                 className="aspect-square w-full object-cover transition duration-500 hover:scale-[1.03]"
               />
             </div>
+
+            {hasMultipleImages ? (
+              <div className="mt-4 flex flex-wrap gap-3">
+                {productImages.map((image, index) => (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    className={`overflow-hidden rounded-2xl border-2 transition ${
+                      index === activeImageIndex
+                        ? "border-primary shadow-md"
+                        : "border-slate-200 hover:border-primary/50"
+                    }`}
+                    aria-label={`Show product image ${index + 1}`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${singleProduct.name || "Product"} thumbnail ${index + 1}`}
+                      className="h-20 w-20 object-cover sm:h-24 sm:w-24"
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:rounded-4xl sm:p-6 lg:p-8">

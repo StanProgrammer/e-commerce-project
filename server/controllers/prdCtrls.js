@@ -183,7 +183,7 @@ const getRelatedProducts = asyncHandler(async (req, res) => {
   };
 
   const relatedProducts = await Product.find(query)
-    .select("name price image category rating")
+    .select("name price images category rating oldPrice")
     .limit(8)
     .lean();
 
