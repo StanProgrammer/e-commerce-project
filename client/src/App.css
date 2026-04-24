@@ -120,10 +120,27 @@ nav {
 .link a {
   font-weight: 500;
   color: var(--color-text-dark);
+  position: relative;
+  transition: color 0.3s ease;
 }
 
 .link a:hover {
   color: var(--color-primary);
+}
+
+.link a.active {
+  color: var(--color-primary);
+}
+
+.link a.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.45rem;
+  height: 2px;
+  border-radius: 999px;
+  background-color: var(--color-primary);
 }
 
 .nav__logo a {
@@ -184,6 +201,11 @@ nav {
 }
 
 .mobile__menu__link:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.mobile__menu__link.active {
   color: var(--color-primary);
   background-color: var(--color-primary-light);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import CartModal from "./CartModal";
 import avatar from "../assets/avatar.png";
 import { useLogoutUserMutation } from "../store/features/auth/authApi";
@@ -86,7 +86,7 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { label: "Home", to: "/" },
+    { label: "Home", to: "/", end: true },
     { label: "Shop", to: "/shop" },
     { label: "Contact", to: "/contact" },
   ];
@@ -99,7 +99,9 @@ const Navbar = () => {
         <ul className="nav__links">
           {navLinks.map((item) => (
             <li key={item.to} className="link">
-              <Link to={item.to}>{item.label}</Link>
+              <NavLink to={item.to} end={item.end}>
+                {item.label}
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -189,13 +191,14 @@ const Navbar = () => {
           <ul className="space-y-3">
             {navLinks.map((item) => (
               <li key={item.to}>
-                <Link
+                <NavLink
                   className="mobile__menu__link block rounded-xl px-3 py-2"
                   to={item.to}
+                  end={item.end}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.label}
-                </Link>
+                </NavLink>
               </li>
             ))}
           </ul>
