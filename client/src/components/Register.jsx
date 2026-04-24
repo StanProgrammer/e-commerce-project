@@ -7,6 +7,45 @@ import { useDispatch } from "react-redux";
 import { setUser } from "../store/features/auth/authSlice";
 import toast from "react-hot-toast";
 
+const passwordRequirements = [
+  {
+    label: "At least 8 characters",
+    isValid: (password) => password.length >= 8,
+  },
+  {
+    label: "One uppercase letter",
+    isValid: (password) => /[A-Z]/.test(password),
+  },
+  {
+    label: "One lowercase letter",
+    isValid: (password) => /[a-z]/.test(password),
+  },
+  {
+    label: "One number",
+    isValid: (password) => /\d/.test(password),
+  },
+  {
+    label: "One special character",
+    isValid: (password) => /[^A-Za-z0-9]/.test(password),
+  },
+];
+
+const getPasswordError = (password) => {
+  if (!password) {
+    return "Password is required.";
+  }
+
+  const missingRequirements = passwordRequirements
+    .filter((requirement) => !requirement.isValid(password))
+    .map((requirement) => requirement.label.toLowerCase());
+
+  if (missingRequirements.length > 0) {
+    return `Password must include ${missingRequirements.join(", ")}.`;
+  }
+
+  return "";
+};
+
 const getRegisterErrors = (form) => {
   const nextErrors = {};
 
@@ -22,10 +61,9 @@ const getRegisterErrors = (form) => {
     nextErrors.email = "Enter a valid email address.";
   }
 
-  if (!form.password) {
-    nextErrors.password = "Password is required.";
-  } else if (form.password.length < 6) {
-    nextErrors.password = "Password must be at least 6 characters.";
+  const passwordError = getPasswordError(form.password);
+  if (passwordError) {
+    nextErrors.password = passwordError;
   }
 
   if (!form.confirmPassword) {
@@ -53,6 +91,10 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const nameRef = useRef(null);
+  const passwordChecklist = passwordRequirements.map((requirement) => ({
+    ...requirement,
+    met: requirement.isValid(form.password),
+  }));
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -201,8 +243,25 @@ export default function Register() {
                 )}
               </label>
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Password</span>
+              <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-medium text-slate-700">Password requirements</p>
+                <ul id="password-requirements" className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                  {passwordChecklist.map((requirement) => (
+                    <li
+                      key={requirement.label}
+                      className={`flex items-center gap-2 ${
+                        requirement.met ? "text-green-700" : "text-slate-500"
+                      }`}
+                    >
+                      <i className={requirement.met ? "ri-checkbox-circle-fill" : "ri-circle-line"}></i>
+                      <span>{requirement.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <label className="block sm:col-span-2">
+                <span className="mb-2 block text-sm font-medium text-slate-700">Create password</span>
                 <div className="relative">
                   <input
                     id="register-password"
@@ -215,7 +274,7 @@ export default function Register() {
                       errors.password ? "border-red-400 bg-red-50" : "border-slate-300 bg-white"
                     }`}
                     aria-invalid={!!errors.password}
-                    aria-describedby={errors.password ? "password-error" : undefined}
+                    aria-describedby={`password-requirements${errors.password ? " password-error" : ""}`}
                   />
                   <button
                     type="button"
@@ -233,7 +292,7 @@ export default function Register() {
                 )}
               </label>
 
-              <label className="block">
+              <label className="block sm:col-span-2">
                 <span className="mb-2 block text-sm font-medium text-slate-700">Confirm password</span>
                 <div className="relative">
                   <input
