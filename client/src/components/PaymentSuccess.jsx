@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { clearCart } from "../store/features/cart/cartSlice";
 import getBaseUrl from "../utils/baseUrl";
 import TimeStep from "./TimeStep";
 
 const PaymentSuccess = () => {
   const [orderDetails, setOrderDetails] = useState(null);
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const sessionId = queryParams.get("session_id");
@@ -21,12 +25,15 @@ const PaymentSuccess = () => {
         .then((data) => {
           console.log("Order details:", data);
           setOrderDetails(data.order);
+          if (data?.order) {
+            dispatch(clearCart());
+          }
         })
         .catch((error) => {
           console.log("Error fetching order details:", error);
         });
     }
-  }, []);
+  }, [dispatch]);
   if (!orderDetails) {
     return <div>Loading...</div>;
   }
