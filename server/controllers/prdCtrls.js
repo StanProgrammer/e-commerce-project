@@ -42,7 +42,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
     limit = 10,
   } = req.query;
 
-  const filter = {};
+  const filter = {isDeleted: false};
 
   if (category && category !== "all") filter.category = category;
   if (color && color !== "all") filter.color = color;
@@ -77,7 +77,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
 const getSingleProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const product = await Product.findById(id).populate("author", "email");
+  const product = await Product.findOne({ _id: id, isDeleted: false }).populate("author", "email");
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
@@ -116,9 +116,8 @@ const updateProduct = asyncHandler(async (req, res) => {
       })
     );
   }
-console.log(newImageUrls)
+
   const finalImages = [...existingImages, ...newImageUrls];
-  console.log(finalImages)
   if (
     req.body.existingImages !== undefined ||
     (req.files && req.files.length > 0)
@@ -128,7 +127,7 @@ console.log(newImageUrls)
 
   delete updateData.existingImages;
 
-  const product = await Product.findByIdAndUpdate(id, updateData, {
+  const product = await Product.findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
     new: true,
     runValidators: true,
   });
@@ -148,12 +147,15 @@ console.log(newImageUrls)
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const product = await Product.findByIdAndDelete(id);
+  const product = await Product.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true }
+  );
+
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
-
-  await Review.deleteMany({ productId: id });
 
   res.status(200).json({ message: "Product deleted successfully" });
 });
@@ -162,7 +164,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 const getRelatedProducts = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const product = await Product.findById(id).lean();
+  const product = await Product.findOne({ _id: id, isDeleted: false }).lean();
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
@@ -177,6 +179,7 @@ const getRelatedProducts = asyncHandler(async (req, res) => {
 
   const query = {
     _id: { $ne: id },
+    isDeleted: false,
     $or: titleRegex
       ? [{ category: product.category }, { name: titleRegex }]
       : [{ category: product.category }],

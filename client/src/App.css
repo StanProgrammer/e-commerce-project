@@ -95,10 +95,18 @@ img {
 nav {
   max-width: var(--max-width-1400);
   margin: auto;
-  /* padding: 2rem 1rem; */
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.fixed-nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .nav__links {
@@ -147,6 +155,39 @@ nav {
   color: var(--color-primary);
 }
 
+.mobile__menu__toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-text-dark);
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.mobile__menu__toggle:hover {
+  color: var(--color-primary);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.mobile__menu__toggle i {
+  font-size: 1.25rem;
+}
+
+.mobile__menu__link {
+  font-weight: 500;
+  color: var(--color-text-dark);
+}
+
+.mobile__menu__link:hover {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
 /* ---------------------------------------------
    Header
 ----------------------------------------------*/
@@ -187,6 +228,7 @@ nav {
 .header__image {
   position: relative;
   height: 100%;
+  min-height: 320px;
 }
 
 .header__image img {
@@ -195,6 +237,7 @@ nav {
   bottom: -5rem;
   transform: translateX(-50%);
   max-width: 500px;
+  width: min(100%, 500px);
 }
 
 /* ---------------------------------------------
@@ -241,6 +284,12 @@ nav {
   position: relative;
   box-shadow: 2px 2px 20px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
+  overflow: hidden;
+}
+
+.hero__card img {
+  width: 100%;
+  display: block;
 }
 
 .hero__content {
@@ -639,17 +688,20 @@ input::-webkit-textfield-decoration-container {
     display: none;
   }
 
+  .mobile__menu__toggle {
+    display: inline-flex;
+  }
+
   .header__container {
     grid-template-columns: 1fr;
     min-height: auto;
-    min-width: fit-content;
+    overflow: hidden;
   }
 
   
   .nav__logo a {
     font-size: 1.7rem;  
-    white-space: nowrap; 
-    margin: 1rem;  
+    white-space: nowrap;
   }
   .banner__container {
     grid-template-columns: repeat(2, 1fr);
@@ -658,6 +710,19 @@ input::-webkit-textfield-decoration-container {
   .header__content {
     margin: auto;
     text-align: center;
+  }
+
+  .header__content h1 {
+    font-size: clamp(3rem, 12vw, 4.5rem);
+  }
+
+  .header__image {
+    min-height: 280px;
+  }
+
+  .header__image img {
+    bottom: 0;
+    width: min(85vw, 420px);
   }
 
   .hero__container {
@@ -697,12 +762,35 @@ input::-webkit-textfield-decoration-container {
   #root {
     width: 100% !important; 
 }
-   .footer__container {
+  .section__container {
+    padding: 3.5rem 1rem;
+  }
+
+  nav {
+    gap: 0.75rem;
+  }
+
+  .nav__icons {
+    gap: 0.75rem;
+  }
+
+  .nav__logo {
+    min-width: 0;
+  }
+
+  .nav__logo a {
+    font-size: 1.35rem;
+    white-space: normal;
+    line-height: 1.1;
+  }
+
+  .footer__container {
     grid-template-columns: repeat(1, 1fr);
   }
   
   .categories__grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .hero__container,
@@ -718,6 +806,32 @@ input::-webkit-textfield-decoration-container {
     margin-inline: auto;     
     box-sizing: border-box;  
     padding: 1.25rem;         
+  }
+
+  .header__content h1 {
+    font-size: clamp(2.5rem, 14vw, 3.5rem);
+    line-height: 1.05;
+  }
+
+  .header__image {
+    min-height: 230px;
+  }
+
+  .header__image img {
+    width: min(88vw, 340px);
+  }
+
+  .deals__countdown {
+    gap: 0.75rem;
+  }
+
+  .deals__countdown__card {
+    width: 72px;
+    height: 72px;
+  }
+
+  .deals__countdown__card h4 {
+    font-size: 1.4rem;
   }
   
 }

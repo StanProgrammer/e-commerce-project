@@ -13,7 +13,7 @@ const Categories = () => {
     ]
   return (
     <>
-    <div className='product__grid'>
+    <div className='categories__grid'>
       {
         categories.map((category,index) => (
             

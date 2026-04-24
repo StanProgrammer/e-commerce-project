@@ -7,12 +7,15 @@ import { useLogoutUserMutation } from "../store/features/auth/authApi";
 import { logout } from "../store/features/auth/authSlice";
 const Navbar = () => {
   const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const mobileMenuToggleRef = useRef(null);
 
   const products = useSelector((state) => state.cart.products);
   const selectedItems = useSelector((state) => state.cart.selectedItems ?? 0);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const toggleCart = () => setIsCartOpen((s) => !s);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // show user if logged in
   const { user } = useSelector((state) => state.auth);
@@ -55,6 +58,13 @@ const Navbar = () => {
       if (isDropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
+
+      const clickedInsideMobileMenu =
+        mobileMenuRef.current?.contains(event.target) || mobileMenuToggleRef.current?.contains(event.target);
+
+      if (isMobileMenuOpen && !clickedInsideMobileMenu) {
+        setIsMobileMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
@@ -62,23 +72,36 @@ const Navbar = () => {
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isMobileMenuOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 900) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const navLinks = [
+    { label: "Home", to: "/" },
+    { label: "Shop", to: "/shop" },
+    { label: "Contact", to: "/contact" },
+  ];
 
 
   return (
-    <header className="fixed-nav-bar w-nav">
+    <header className="fixed-nav-bar w-nav relative">
       <nav className="max-w-screen-2xl mx-auto px-4 flex justify-between items-center h-16">
         {/* left links */}
         <ul className="nav__links">
-          <li className="link">
-            <Link to="/">Home</Link>
-          </li>
-          <li className="link">
-            <Link to="/shop">Shop</Link>
-          </li>
-          <li className="link">
-            <Link to="/contact">Contact</Link>
-          </li>
+          {navLinks.map((item) => (
+            <li key={item.to} className="link">
+              <Link to={item.to}>{item.label}</Link>
+            </li>
+          ))}
         </ul>
 
         {/* logo */}
@@ -90,6 +113,18 @@ const Navbar = () => {
 
         {/* icons */}
         <div className="nav__icons flex items-center gap-6">
+          <button
+            ref={mobileMenuToggleRef}
+            type="button"
+            className="mobile__menu__toggle"
+            aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          >
+            <i className={isMobileMenuOpen ? "ri-close-line" : "ri-menu-line"} />
+          </button>
+
           <Link to="/search" className="text-xl hover:text-primary transition cursor-pointer">
             <i className="ri-search-line" />
           </Link>
@@ -144,6 +179,28 @@ const Navbar = () => {
           )}
         </div>
       </nav>
+
+      {isMobileMenuOpen && (
+        <div
+          id="mobile-navigation"
+          ref={mobileMenuRef}
+          className="mobile__menu absolute left-4 right-4 top-[4.5rem] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg z-40"
+        >
+          <ul className="space-y-3">
+            {navLinks.map((item) => (
+              <li key={item.to}>
+                <Link
+                  className="mobile__menu__link block rounded-xl px-3 py-2"
+                  to={item.to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {isCartOpen && <CartModal products={products} isOpen={isCartOpen} onClose={toggleCart} />}
     </header>
