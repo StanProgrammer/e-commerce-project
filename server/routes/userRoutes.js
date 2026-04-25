@@ -1,10 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 
 const { verifyToken } = require('../utils/helper');
 const userCtrls = require('../controllers/userCtrls');
 const validateBody = require('../middlewares/validateBody');
 const { updateUserSchema } = require('../validation/userValidator');
+
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed.'));
+    }
+
+    cb(null, true);
+  },
+});
+
+const uploadAvatar = (req, res, next) => {
+  avatarUpload.single('avatar')(req, res, (error) => {
+    if (error) {
+      return res.status(400).json({
+        message: error.message || 'Avatar upload failed.',
+      });
+    }
+
+    next();
+  });
+};
 
 // get all users
 router.get('/', verifyToken, userCtrls.getAllUsers);
@@ -12,6 +39,13 @@ router.get('/', verifyToken, userCtrls.getAllUsers);
 
 
 // update user (profile only)
+router.patch(
+  '/:id/profile',
+  verifyToken,
+  uploadAvatar,
+  userCtrls.updateUserProfileWithAvatar
+);
+
 router.patch(
   '/:id',
   verifyToken,

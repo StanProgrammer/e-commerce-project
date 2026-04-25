@@ -57,4 +57,61 @@ const uploadToCloudinary = async (file, customOptions = {}) => {
   }
 };
 
+const uploadToCloudinaryResult = async (file, customOptions = {}) => {
+  if (!file) {
+    throw new Error("No file provided for upload");
+  }
+
+  const options = { ...DEFAULT_OPTIONS, ...customOptions };
+  const result = await cloudinary.uploader.upload(file, options);
+
+  if (!result?.secure_url || !result?.public_id) {
+    throw new Error("Upload failed: Cloudinary did not return image details");
+  }
+
+  return result;
+};
+
+const getPublicIdFromUrl = (url) => {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) {
+    return "";
+  }
+
+  const uploadIndex = url.indexOf("/upload/");
+  if (uploadIndex === -1) {
+    return "";
+  }
+
+  const path = url.slice(uploadIndex + "/upload/".length);
+  const pathWithoutVersion = path.replace(/^v\d+\//, "");
+  const pathWithoutQuery = pathWithoutVersion.split("?")[0];
+  const publicId = pathWithoutQuery.replace(/\.[^/.]+$/, "");
+
+  return decodeURIComponent(publicId);
+};
+
+const deleteFromCloudinary = async (urlOrPublicId) => {
+  if (typeof urlOrPublicId === "string" && /^https?:\/\//.test(urlOrPublicId)) {
+    const publicIdFromUrl = getPublicIdFromUrl(urlOrPublicId);
+
+    if (!publicIdFromUrl) {
+      return null;
+    }
+
+    return cloudinary.uploader.destroy(publicIdFromUrl, { invalidate: true });
+  }
+
+  const publicId = getPublicIdFromUrl(urlOrPublicId) || urlOrPublicId;
+
+  if (!publicId) {
+    return null;
+  }
+
+  return cloudinary.uploader.destroy(publicId, { invalidate: true });
+};
+
+uploadToCloudinary.uploadResult = uploadToCloudinaryResult;
+uploadToCloudinary.delete = deleteFromCloudinary;
+uploadToCloudinary.getPublicIdFromUrl = getPublicIdFromUrl;
+
 module.exports = uploadToCloudinary;

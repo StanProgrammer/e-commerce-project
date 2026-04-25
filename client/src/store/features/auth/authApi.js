@@ -74,6 +74,14 @@ const authApi = createApi({
         body,
       }),
     }),
+    updateProfileWithAvatar: builder.mutation({
+      query: ({ userId, formData }) => ({
+        url: `/user/${userId}/profile`,
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -87,6 +95,7 @@ export const {
   useLogoutUserMutation,
   useGetUserProfileQuery,
   useEditProfileMutation,
+  useUpdateProfileWithAvatarMutation,
 } = authApi;
 
 export default authApi;
