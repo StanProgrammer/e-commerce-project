@@ -3,7 +3,6 @@ import { Outlet, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import UserDashboard from "./UserDashboard";
 import AdminDashboard from "./AdminDashboard";
-import { Toaster } from "react-hot-toast";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -25,7 +24,6 @@ const Dashboard = () => {
 
   return (
     <>
-    <Toaster position="top-center" containerStyle={{ zIndex: 9999 }} />
     <div className="flex bg-gray-50 min-h-screen">
       
       {/* Sidebar */}

@@ -7,10 +7,12 @@ import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
 import router from "./routers/router.jsx";
 import { PersistGate } from "redux-persist/integration/react";
+import AppToaster from "./components/AppToaster.jsx";
 
 createRoot(document.getElementById("root")).render(
   <Provider store={store}>
      <PersistGate loading={null} persistor={persistor}>
+    <AppToaster />
     <RouterProvider router={router} />
     </PersistGate>
   </Provider>

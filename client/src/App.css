@@ -694,6 +694,32 @@ input::-webkit-textfield-decoration-container {
   white-space: nowrap;
 }
 
+.toast-close-button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.toast-close-button:hover,
+.toast-close-button:focus-visible {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.toast-close-button:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }

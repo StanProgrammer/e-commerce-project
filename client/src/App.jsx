@@ -3,7 +3,6 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
-import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { logout, setUser } from "./store/features/auth/authSlice";
@@ -35,17 +34,6 @@ function App() {
 
   return (
     <>
-      <Toaster
-        position="top-center"
-        containerStyle={{ zIndex: 9999 }}
-        toastOptions={{
-          style: {
-            maxWidth: "none",
-            whiteSpace: "nowrap",
-          },
-        }}
-      />
-
       <Navbar />
       <ScrollToTop />
       <Outlet />
