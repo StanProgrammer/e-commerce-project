@@ -5,7 +5,7 @@ import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { logout, setUser } from "./store/features/auth/authSlice";
+import { markAuthChecked, setUser } from "./store/features/auth/authSlice";
 import getBaseUrl from "./utils/baseUrl";
 
 function App() {
@@ -25,7 +25,7 @@ function App() {
 
     } catch (err) {
       console.error("Auth check failed:", err);
-      dispatch(logout());
+      dispatch(markAuthChecked());
     }
   };
 
