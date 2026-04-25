@@ -1,31 +1,26 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useMemo } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useLogoutUserMutation } from "../../store/features/auth/authApi";
 import { logout } from "../../store/features/auth/authSlice";
-import { useDispatch } from "react-redux";
-
-const icons = {
-  Dashboard: "ri-home-5-line",
-  Orders: "ri-shopping-bag-3-line",
-  Profile: "ri-user-3-line",
-  Payments: "ri-bank-card-line",
-  Reviews: "ri-star-line",
-};
+import { useDispatch, useSelector } from "react-redux";
+import avatar from "../../assets/avatar.png";
 
 const UserDashboard = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const sidebarRef = useRef(null);
   const [logoutUser, { isLoading }] = useLogoutUserMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard" },
-    { path: "/dashboard/orders", label: "Orders" },
-    { path: "/dashboard/profile", label: "Profile" },
-    { path: "/dashboard/payments", label: "Payments" },
-    { path: "/dashboard/reviews", label: "Reviews" },
-  ];
+  const navItems = useMemo(
+    () => [
+      { path: "/dashboard", label: "Dashboard", icon: "ri-home-5-line", end: true },
+      { path: "/dashboard/orders", label: "Orders", icon: "ri-shopping-bag-3-line" },
+      { path: "/dashboard/profile", label: "Profile", icon: "ri-user-3-line" },
+      { path: "/dashboard/payments", label: "Payments", icon: "ri-bank-card-line" },
+      { path: "/dashboard/reviews", label: "Reviews", icon: "ri-star-line" },
+    ],
+    []
+  );
 
   const handleLogout = async () => {
     try {
@@ -37,76 +32,55 @@ const UserDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (!collapsed && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        setCollapsed(true);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, [collapsed]);
+  const displayName = user?.username || user?.email?.split("@")[0] || "Customer";
 
   return (
-    <aside
-      ref={sidebarRef}
-      className={`h-[100dvh] sticky top-0 bg-white border-r flex flex-col transition-all duration-300
-  ${collapsed ? "w-20" : "w-72"}`}
-    >
-      {/* TOP */}
-      <div className="p-4 overflow-y-auto">
-        {/* HEADER */}
-        <div className="flex items-center justify-between mb-8">
-          {!collapsed && (
-            <Link to="/" className="text-xl font-bold">
-              Willow & Rue<span className="text-primary">.</span>
-            </Link>
-          )}
+    <aside className="flex h-dvh w-full flex-col border-r border-slate-200 bg-white">
+      <div className="border-b border-slate-100 px-5 py-5">
+        <Link to="/" className="inline-flex items-center gap-2 text-xl font-bold text-slate-900">
+          <span>Willow & Rue</span>
+          <span className="text-primary">.</span>
+        </Link>
 
-          {/* TOGGLE */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-2.5 rounded-xl hover:bg-gray-100 transition-all duration-200 flex items-center justify-center cursor-pointer"
-          >
-            <i
-              className={`ri-arrow-left-s-line text-xl transition-transform duration-300 ${
-                collapsed ? "rotate-180" : ""
-              }`}
-            ></i>
-          </button>
+        <div className="mt-5 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <img
+            src={user?.profilePic || avatar}
+            alt={displayName}
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white"
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
+            <p className="truncate text-xs text-slate-500">{user?.email || "Member account"}</p>
+          </div>
         </div>
+      </div>
 
-        {/* NAV */}
-        <ul className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-4 py-5" role="navigation" aria-label="User dashboard">
+        <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Account</p>
+        <ul className="space-y-1.5">
           {navItems.map((item) => (
             <li key={item.path}>
               <NavLink
                 to={item.path}
-                end={item.path === "/dashboard"}
+                end={item.end}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 relative
-    ${isActive ? "bg-linear-to-r from-primary to-indigo-500 text-white shadow-sm" : "text-gray-700 hover:bg-gray-100"}`
+                  `group relative flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition ${
+                    isActive ? "bg-primary text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                  }`
                 }
               >
                 {({ isActive }) => (
                   <>
                     {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-white rounded-r"></span>
+                      <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r bg-white" />
                     )}
-
-                    {/* ICON */}
                     <i
-                      className={`${icons[item.label]} text-lg min-w-5 text-center ${
-                        isActive ? "text-white" : "text-gray-500 group-hover:text-gray-800"
+                      className={`${item.icon} min-w-5 text-center text-lg ${
+                        isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700"
                       }`}
-                    ></i>
-
-                    {/* LABEL */}
-                    {!collapsed && <span>{item.label}</span>}
+                      aria-hidden="true"
+                    />
+                    <span>{item.label}</span>
                   </>
                 )}
               </NavLink>
@@ -115,24 +89,23 @@ const UserDashboard = () => {
         </ul>
       </div>
 
-      {/* BOTTOM */}
-      <div className="p-4 border-t mt-auto mb-10">
-        {!collapsed && <p className="text-xs text-gray-400 text-center">© {new Date().getFullYear()} Willow & Rue</p>}
-
+      <div className="mt-auto border-t border-slate-100 p-4">
         <button
+          type="button"
           onClick={handleLogout}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl hover:bg-primary/90 transition disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
-            <i className="ri-loader-4-line animate-spin text-lg"></i>
+            <i className="ri-loader-4-line animate-spin text-lg" aria-hidden="true" />
           ) : (
             <>
-              <i className="ri-logout-box-r-line text-lg"></i>
-              {!collapsed && "Logout"}
+              <i className="ri-logout-box-r-line cursor-pointer text-lg" aria-hidden="true" />
+              Logout
             </>
           )}
         </button>
+        <p className="mt-4 text-center text-xs text-slate-400">&copy; {new Date().getFullYear()} Willow & Rue</p>
       </div>
     </aside>
   );
