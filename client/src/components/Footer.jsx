@@ -37,7 +37,7 @@ const Footer = () => {
         <Link to="/team">About Us</Link>
         {/* this is good idea lets see in future if we can add more links here */}
         {/* <a href="/careers">Careers</a> */}
-        <a href="/blog">Blogs</a>
+        {/* <a href="/blog">Blogs</a> */}
         <a href="/policy">Terms & Conditions</a>
       </div>
       <div className="footer__col">
