@@ -19,7 +19,7 @@ const contactHighlights = [
   {
     icon: "ri-map-pin-line",
     title: "Visit Studio",
-    detail: "123 Fashion Street, Mumbai",
+    detail: "123 Fashion Street, Pune",
     caption: "See curated pieces up close and meet our style team.",
   },
 ];

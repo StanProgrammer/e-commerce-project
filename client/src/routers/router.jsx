@@ -6,6 +6,7 @@ import Search from "../pages/Search/Search.jsx";
 import ShopPage from "../pages/Shop/ShopPage.jsx";
 import ProductPage from "../pages/Shop/product/ProductPage.jsx";
 import ContactPage from "../pages/Contact/ContactPage.jsx";
+import Team from "../pages/Team/Team.jsx";
 import Login from "../components/Login.jsx";
 import Register from "../components/Register.jsx";
 import PaymentSuccess from "../components/PaymentSuccess.jsx";
@@ -47,6 +48,10 @@ const router = createBrowserRouter ([
       {
         path: "/contact",
         element: <ContactPage/>,
+      },
+      {
+        path: "/team",
+        element: <Team/>,
       },
       {
         path:"/shop/:id",

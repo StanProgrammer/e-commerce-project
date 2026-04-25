@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import insta1 from "../assets/instagram-1.jpg";
 import insta2 from "../assets/instagram-2.jpg";
 import insta3 from "../assets/instagram-3.jpg";
@@ -15,7 +16,7 @@ const Footer = () => {
           <span>
             <i className="ri-map-pin-2-fill"></i>
           </span>
-          123 Fashion St, Mumbai, MH 10001
+          123 Fashion St, Pune, MH 10001
         </p>
         <p>
           <span>
@@ -32,9 +33,10 @@ const Footer = () => {
       </div>
       <div className="footer__col">
         <h4>About Us</h4>
-        <a href="/about">Home</a>
-        <a href="/team">About Us</a>
-        <a href="/careers">Careers</a>
+        <Link to="/">Home</Link>
+        <Link to="/team">About Us</Link>
+        {/* this is good idea lets see in future if we can add more links here */}
+        {/* <a href="/careers">Careers</a> */}
         <a href="/blog">Blogs</a>
         <a href="/policy">Terms & Conditions</a>
       </div>
