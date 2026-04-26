@@ -9,6 +9,7 @@ import { productsApi } from "./features/products/productsApi";
 import { reviewsApi } from "./features/reviews/reviewsApi";
 import statsApi from "./features/stats/statsApi";
 import orderApi from "./features/orders/orderApi";
+import { blogsApi } from "./features/blogs/blogsApi";
 
 /* =========================
    Persist Configuration
@@ -30,6 +31,7 @@ const appReducer = combineReducers({
   [reviewsApi.reducerPath]: reviewsApi.reducer,
   [statsApi.reducerPath]: statsApi.reducer,
   [orderApi.reducerPath]: orderApi.reducer,
+  [blogsApi.reducerPath]: blogsApi.reducer,
 });
 
 /* =========================
@@ -60,7 +62,8 @@ export const store = configureStore({
       productsApi.middleware,
       reviewsApi.middleware,
       statsApi.middleware,
-      orderApi.middleware
+      orderApi.middleware,
+      blogsApi.middleware
     ),
 });
 

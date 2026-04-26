@@ -42,6 +42,7 @@ const Navbar = () => {
     { name: "Manage Orders", link: "/dashboard/manage-orders" },
     { name: "Manage Users", link: "/dashboard/user-management" },
     { name: "Add Product", link: "/dashboard/add-product" },
+    { name: "Manage Blogs", link: "/dashboard/manage-blogs" },
   ];
 
   const userDropDownMenu = [
@@ -88,6 +89,7 @@ const Navbar = () => {
   const navLinks = [
     { label: "Home", to: "/", end: true },
     { label: "Shop", to: "/shop" },
+    { label: "Blogs", to: "/blogs" },
     { label: "Contact", to: "/contact" },
   ];
 

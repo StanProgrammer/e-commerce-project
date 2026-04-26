@@ -16,8 +16,10 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const blogRoutes = require('./routes/blogRoutes');
 // const { errorHandler } = require('./middleware/errorHandler');
 const uploadImage = require('./utils/uploadImage');
+const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
 const app = express();
 
 // --- Basic security + logging ---
@@ -52,6 +54,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/blogs', blogRoutes);
 
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));
@@ -65,6 +68,7 @@ async function start() {
   try {
     await mongoose.connect(process.env.DB_URL, {  });
     console.log('Connected to MongoDB');
+    await seedDefaultBlogs();
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (err) {
     console.error('Failed to start server:', err.message);

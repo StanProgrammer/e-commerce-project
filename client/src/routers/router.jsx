@@ -24,6 +24,11 @@ import ManageProducts from "../pages/dashboard/admin/manageProduct/ManageProduct
 import UpdateProduct from "../pages/dashboard/admin/manageProduct/UpdateProduct.jsx";
 import ManageUsers from "../pages/dashboard/admin/users/ManageUsers.jsx";
 import ManageOrders from "../pages/dashboard/admin/manageOrders/ManageOrders.jsx";
+import BlogsPage from "../pages/Blog/BlogsPage.jsx";
+import BlogDetails from "../pages/Blog/BlogDetails.jsx";
+import AddBlog from "../pages/dashboard/admin/blogs/AddBlog.jsx";
+import ManageBlogs from "../pages/dashboard/admin/blogs/ManageBlogs.jsx";
+import UpdateBlog from "../pages/dashboard/admin/blogs/UpdateBlog.jsx";
 const router = createBrowserRouter ([
   {
     path: "/",
@@ -48,6 +53,14 @@ const router = createBrowserRouter ([
       {
         path: "/contact",
         element: <ContactPage/>,
+      },
+      {
+        path: "/blogs",
+        element: <BlogsPage/>,
+      },
+      {
+        path: "/blogs/:slug",
+        element: <BlogDetails/>,
       },
       {
         path: "/team",
@@ -125,6 +138,18 @@ const router = createBrowserRouter ([
       {
         path:"manage-orders",
         element:<Privateroutes role="admin"><ManageOrders/></Privateroutes>
+      },
+      {
+        path:"add-blog",
+        element:<Privateroutes role="admin"><AddBlog/></Privateroutes>
+      },
+      {
+        path:"manage-blogs",
+        element:<Privateroutes role="admin"><ManageBlogs/></Privateroutes>
+      },
+      {
+        path:"update-blog/:id",
+        element:<Privateroutes role="admin"><UpdateBlog/></Privateroutes>
       }
     ]
   }

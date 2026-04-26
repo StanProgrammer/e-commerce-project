@@ -15,6 +15,8 @@ const AdminDashboard = () => {
       { path: "admin", label: "Dashboard", icon: "ri-dashboard-line" },
       { path: "add-product", label: "Add Product", icon: "ri-add-box-line" },
       { path: "manage-products", label: "Products", icon: "ri-box-3-line" },
+      { path: "add-blog", label: "Add Blog", icon: "ri-edit-box-line" },
+      { path: "manage-blogs", label: "Blogs", icon: "ri-article-line" },
       { path: "user-management", label: "Users", icon: "ri-user-3-line" },
       { path: "manage-orders", label: "Orders", icon: "ri-shopping-cart-2-line" },
     ],
