@@ -42,9 +42,9 @@ const Footer = () => {
       </div>
       <div className="footer__col">
         <h4>Useful Resources</h4>
-        <a href="/help">Help Center</a>
-        <a href="/shipping">Track your Order</a>
-        <a href="/returns">Dresses</a>
+        <a href="/contact">Help Center</a>
+        {/* <a href="/shipping">Track your Order</a> */}
+        <a href="/shop?category=clothes">Dresses</a>
         {/* <a href="/sizing">Men</a>
         <a href="/faqs">FAQs</a> */}
       </div>
