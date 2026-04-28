@@ -38,10 +38,40 @@ app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(cookieParser());
 
-// --- CORS (origin from env) ---
-const CLIENT_ORIGIN  = process.env.CLIENT_URL || 'http://localhost:5173';
+// --- CORS ---
+const configuredClientOrigins = [
+  process.env.CLIENT_URL,
+  process.env.CLIENT_URLS,
+  process.env.CORS_ORIGINS,
+]
+  .filter(Boolean)
+  .flatMap((value) => value.split(','))
+  .map((origin) => origin.trim().replace(/\/+$/g, ''))
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  ...configuredClientOrigins,
+]);
+
+const allowedOriginPatterns = [
+  /^https:\/\/e-commerce-project-[a-z0-9-]+-atib-khans-projects\.vercel\.app$/,
+];
+
 app.use(cors({
-  origin: CLIENT_ORIGIN,
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/+$/g, '');
+    const isAllowed =
+      allowedOrigins.has(normalizedOrigin) ||
+      allowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin));
+
+    if (isAllowed) return callback(null, true);
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
   credentials: true,
 }));
 
