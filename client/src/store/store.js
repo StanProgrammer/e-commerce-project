@@ -10,6 +10,7 @@ import { reviewsApi } from "./features/reviews/reviewsApi";
 import statsApi from "./features/stats/statsApi";
 import orderApi from "./features/orders/orderApi";
 import { blogsApi } from "./features/blogs/blogsApi";
+import { policyApi } from "./features/policy/policyApi";
 
 /* =========================
    Persist Configuration
@@ -32,6 +33,7 @@ const appReducer = combineReducers({
   [statsApi.reducerPath]: statsApi.reducer,
   [orderApi.reducerPath]: orderApi.reducer,
   [blogsApi.reducerPath]: blogsApi.reducer,
+  [policyApi.reducerPath]: policyApi.reducer,
 });
 
 /* =========================
@@ -63,7 +65,8 @@ export const store = configureStore({
       reviewsApi.middleware,
       statsApi.middleware,
       orderApi.middleware,
-      blogsApi.middleware
+      blogsApi.middleware,
+      policyApi.middleware
     ),
 });
 

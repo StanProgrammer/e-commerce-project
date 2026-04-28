@@ -29,6 +29,8 @@ import BlogDetails from "../pages/Blog/BlogDetails.jsx";
 import AddBlog from "../pages/dashboard/admin/blogs/AddBlog.jsx";
 import ManageBlogs from "../pages/dashboard/admin/blogs/ManageBlogs.jsx";
 import UpdateBlog from "../pages/dashboard/admin/blogs/UpdateBlog.jsx";
+import PolicyPage from "../pages/Policy/PolicyPage.jsx";
+import ManagePolicy from "../pages/dashboard/admin/policy/ManagePolicy.jsx";
 const router = createBrowserRouter ([
   {
     path: "/",
@@ -65,6 +67,10 @@ const router = createBrowserRouter ([
       {
         path: "/team",
         element: <Team/>,
+      },
+      {
+        path: "/policy",
+        element: <PolicyPage/>,
       },
       {
         path:"/shop/:id",
@@ -150,6 +156,10 @@ const router = createBrowserRouter ([
       {
         path:"update-blog/:id",
         element:<Privateroutes role="admin"><UpdateBlog/></Privateroutes>
+      },
+      {
+        path:"manage-policy",
+        element:<Privateroutes role="admin"><ManagePolicy/></Privateroutes>
       }
     ]
   }

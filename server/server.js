@@ -17,6 +17,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const blogRoutes = require('./routes/blogRoutes');
+const policyRoutes = require('./routes/policyRoutes');
 // const { errorHandler } = require('./middleware/errorHandler');
 const uploadImage = require('./utils/uploadImage');
 const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
@@ -85,6 +86,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/blogs', blogRoutes);
+app.use('/api/policy', policyRoutes);
 
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));
