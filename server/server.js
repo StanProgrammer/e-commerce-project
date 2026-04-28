@@ -39,9 +39,9 @@ app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(cookieParser());
 
 // --- CORS (origin from env) ---
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const CLIENT_ORIGIN = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({
-  origin: CLIENT_ORIGIN,
+  origin: CLIENT_URL,
   credentials: true,
 }));
 
