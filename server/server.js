@@ -38,7 +38,6 @@ const app = express();
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(cookieParser());
-
 // --- CORS ---
 const configuredClientOrigins = [
   process.env.CLIENT_URL,
