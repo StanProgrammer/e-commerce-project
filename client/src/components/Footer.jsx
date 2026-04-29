@@ -9,7 +9,7 @@ import insta5 from "../assets/instagram-5.jpg";
 import insta6 from "../assets/instagram-6.jpg";
 const Footer = () => {
   const { user } = useSelector((state) => state.auth);
-  const orderLinkLabel = user?.role === "admin" ? "Manage order" : "Track Order";
+  const orderLinkLabel = user?.role === "admin" ? "Manage Orders" : "Track My Order";
 
   return (
     <>
