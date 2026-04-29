@@ -53,10 +53,12 @@ const configuredClientOrigins = [
 const allowedOrigins = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  process.env.CLIENT_URL,
   ...configuredClientOrigins,
 ]);
 
 const allowedOriginPatterns = [
+  /^https:\/\/e-commerce-project-[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/e-commerce-project-[a-z0-9-]+-atib-khans-projects\.vercel\.app$/,
 ];
 
