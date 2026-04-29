@@ -1,16 +1,17 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import getBaseUrl from "../../../utils/baseUrl";
 
 const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_BACKEND_URL || "http://localhost:5000",
+    baseUrl: `${getBaseUrl()}/api`,
     credentials: "include",
   }),
   tagTypes: ["User"],
   endpoints: (builder) => ({
     registerUser: builder.mutation({
       query: (userData) => ({
-        url: "/auth/register",
+        url: "auth/register",
         method: "POST",
         body: userData,
       }),
@@ -18,27 +19,27 @@ const authApi = createApi({
 
     loginUser: builder.mutation({
       query: (credentials) => ({
-        url: "/auth/login",
+        url: "auth/login",
         method: "POST",
         body: credentials,
       }),
     }),
     googleLoginUser: builder.mutation({
       query: (body) => ({
-        url: "/auth/google",
+        url: "auth/google",
         method: "POST",
         body,
       }),
     }),
     logoutUser: builder.mutation({
       query: () => ({
-        url: "/auth/logout",
+        url: "auth/logout",
         method: "POST",
       }),
     }),
     getUserProfile: builder.query({
       query: () => ({
-        url: "/user",
+        url: "user",
         method: "GET",
       }),
       refetchOnMountOrArgChange: true,
@@ -46,14 +47,14 @@ const authApi = createApi({
     }),
     deleteUserAccount: builder.mutation({
       query: (userId) => ({
-        url: `/admin/${userId}`,
+        url: `admin/${userId}`,
         method: "DELETE",
       }),
       invalidatesTags: ["User"],
     }),
     updateUserRole: builder.mutation({
       query: ({ userId, role }) => ({
-        url: `/admin/${userId}`,
+        url: `admin/${userId}`,
         method: "PATCH",
         body: { role },
       }),
@@ -61,7 +62,7 @@ const authApi = createApi({
     }),
     updateUserProfile: builder.mutation({
       query: ({ userId, profileData }) => ({
-        url: `/api/user/${userId}`,
+        url: `user/${userId}`,
         method: "PATCH",
         body: profileData,
       }),
@@ -69,14 +70,14 @@ const authApi = createApi({
     }),
     editProfile: builder.mutation({
       query: ({ userId, body }) => ({
-        url: `/user/${userId}`,
+        url: `user/${userId}`,
         method: "PATCH",
         body,
       }),
     }),
     updateProfileWithAvatar: builder.mutation({
       query: ({ userId, formData }) => ({
-        url: `/user/${userId}/profile`,
+        url: `user/${userId}/profile`,
         method: "PATCH",
         body: formData,
       }),

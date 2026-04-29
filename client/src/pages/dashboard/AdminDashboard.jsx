@@ -19,7 +19,7 @@ const AdminDashboard = () => {
       { path: "manage-blogs", label: "Blogs", icon: "ri-article-line" },
       { path: "manage-policy", label: "Policy", icon: "ri-file-list-3-line" },
       { path: "user-management", label: "Users", icon: "ri-user-3-line" },
-      { path: "manage-orders", label: "Orders", icon: "ri-shopping-cart-2-line" },
+      { path: "orders", label: "Orders", icon: "ri-shopping-cart-2-line" },
     ],
     []
   );

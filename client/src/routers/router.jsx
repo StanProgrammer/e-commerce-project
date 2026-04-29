@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import { useSelector } from "react-redux";
 import App from "../App.jsx";
 import Home from "../pages/Home/Home.jsx";
 import CategoryPage from "../pages/Category/CategoryPage.jsx";
@@ -31,6 +32,21 @@ import ManageBlogs from "../pages/dashboard/admin/blogs/ManageBlogs.jsx";
 import UpdateBlog from "../pages/dashboard/admin/blogs/UpdateBlog.jsx";
 import PolicyPage from "../pages/Policy/PolicyPage.jsx";
 import ManagePolicy from "../pages/dashboard/admin/policy/ManagePolicy.jsx";
+
+const DashboardOrders = () => {
+  const { user } = useSelector((state) => state.auth);
+
+  if (user?.role === "admin") {
+    return (
+      <Privateroutes role="admin">
+        <ManageOrders />
+      </Privateroutes>
+    );
+  }
+
+  return <UserOrders />;
+};
+
 const router = createBrowserRouter ([
   {
     path: "/",
@@ -105,7 +121,7 @@ const router = createBrowserRouter ([
       },
       {
         path:"orders",
-        element:<UserOrders/>
+        element:<DashboardOrders/>
       },
       {
         path:"profile",

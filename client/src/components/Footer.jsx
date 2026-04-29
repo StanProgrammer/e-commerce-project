@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import insta1 from "../assets/instagram-1.jpg";
 import insta2 from "../assets/instagram-2.jpg";
@@ -7,6 +8,9 @@ import insta4 from "../assets/instagram-4.jpg";
 import insta5 from "../assets/instagram-5.jpg";
 import insta6 from "../assets/instagram-6.jpg";
 const Footer = () => {
+  const { user } = useSelector((state) => state.auth);
+  const orderLinkLabel = user?.role === "admin" ? "Manage order" : "Track Order";
+
   return (
     <>
     <footer className="section__container footer__container">
@@ -43,7 +47,7 @@ const Footer = () => {
       <div className="footer__col">
         <h4>Useful Resources</h4>
         <a href="/contact">Help Center</a>
-        {/* <a href="/shipping">Track your Order</a> */}
+        <Link to="/dashboard/orders">{orderLinkLabel}</Link>
         <a href="/shop?category=clothes">Dresses</a>
         {/* <a href="/sizing">Men</a>
         <a href="/faqs">FAQs</a> */}
