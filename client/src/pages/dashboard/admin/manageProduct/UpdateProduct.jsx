@@ -5,6 +5,8 @@ import SelectInput from "../addProduct/SelectInput";
 import UploadImage from "../addProduct/UploadImage";
 import { useGetSingleProductQuery, useUpdateProductMutation } from "../../../../store/features/products/productsApi";
 import toast from "react-hot-toast";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const categories = [
   { label: "Select Category", value: "" },
@@ -102,7 +104,7 @@ formData.append("existingImages", JSON.stringify(existingImages));
 
 await updateProduct({ id, formData }).unwrap();  
 
-      toast.success("Product updated successfully");
+      toast.success("Product updated. Your catalog changes have been saved.");
       navigate("/dashboard/manage-products");
     } catch (err) {
   console.error(err);
@@ -136,7 +138,7 @@ await updateProduct({ id, formData }).unwrap();
   }
 
   //  fallback
-  toast.error("Something went wrong");
+  toast.error(getApiErrorMessage(err, "Product could not be updated. Check the form and try again."));
 }
   };
 
@@ -155,15 +157,19 @@ await updateProduct({ id, formData }).unwrap();
   if (isError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-lg">Error loading product</p>
+        <MessageState
+          tone="error"
+          title="Product could not be loaded"
+          message="Return to the products list and try opening this item again."
+          action={
           <button
             onClick={() => navigate("/dashboard/manage-products")}
             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Back to Products
           </button>
-        </div>
+          }
+        />
       </div>
     );
   }

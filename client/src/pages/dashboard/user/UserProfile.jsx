@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import avatar from "../../../assets/avatar.png";
 import { useUpdateProfileWithAvatarMutation } from "../../../store/features/auth/authApi";
 import { setUser } from "../../../store/features/auth/authSlice";
+import getApiErrorMessage from "../../../utils/getApiErrorMessage";
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -127,10 +128,10 @@ const UserProfile = () => {
       localStorage.setItem("user", JSON.stringify(response.user));
       setIsModalOpen(false);
       resetAvatarSelection();
-      toast.success("Profile updated successfully!");
+      toast.success("Profile updated. Your changes have been saved.");
     } catch (error) {
       console.error(error);
-      toast.error(error?.data?.message || "Failed to update profile. Please try again.");
+      toast.error(getApiErrorMessage(error, "Profile could not be updated. Check your details and try again."));
     }
   };
 
@@ -138,7 +139,7 @@ const UserProfile = () => {
   const displayBio = formData.bio || "Add a short bio so shoppers and support can recognize your account.";
   const displayProfession = formData.profession || "Add your profession";
   const currentAvatar = avatarPreview || formData.profilePic || avatar;
-  const updateErrorMessage = updateError?.data?.message || "Something went wrong. Please try saving again.";
+  const updateErrorMessage = getApiErrorMessage(updateError, "Profile could not be updated. Check your details and try again.");
   const initials = displayName
     .split(" ")
     .filter(Boolean)

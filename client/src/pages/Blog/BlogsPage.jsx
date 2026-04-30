@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import BlogCard from "./BlogCard";
 import { useFetchAllBlogsQuery } from "../../store/features/blogs/blogsApi";
+import MessageState from "../../components/MessageState";
 
 const BLOGS_PER_PAGE = 8;
 
@@ -26,7 +27,14 @@ const BlogsPage = () => {
         </div>
       )}
 
-      {isError && <p className="mt-10 text-center text-red-500">Failed to load blogs.</p>}
+      {isError && (
+        <MessageState
+          tone="error"
+          title="Blogs could not be loaded"
+          message="Refresh the page or try again after checking your connection."
+          className="mt-10"
+        />
+      )}
 
       {!isLoading && !isError && (
         <>
@@ -37,7 +45,12 @@ const BlogsPage = () => {
           </div>
 
           {blogs.length === 0 && (
-            <p className="mt-10 text-center text-gray-500">No blogs found.</p>
+            <MessageState
+              tone="empty"
+              title="No blog posts yet"
+              message="New styling stories and announcements will appear here when they are published."
+              className="mt-10"
+            />
           )}
 
           {totalPages > 1 && (

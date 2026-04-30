@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { setUser } from "../store/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
+import getApiErrorMessage from "../utils/getApiErrorMessage";
 
 const getLoginErrors = (form) => {
   const nextErrors = {};
@@ -57,10 +58,10 @@ export default function LoginPage() {
           try {
             const res = await googleLoginUser({ credential: response.credential }).unwrap();
             dispatch(setUser(res.user));
-            toast.success("Google login successful!");
+            toast.success("Signed in with Google.");
             navigate("/");
           } catch (googleError) {
-            toast.error(googleError?.data?.message || "Google sign-in failed.");
+            toast.error(getApiErrorMessage(googleError, "Google sign-in failed. Please try again or use email and password."));
           }
         },
       });
@@ -132,21 +133,21 @@ export default function LoginPage() {
       }).unwrap();
 
       dispatch(setUser(res.user));
-      toast.success("Login successful!");
+      toast.success("You are signed in.");
       navigate("/");
     } catch (err) {
-      toast.error(err?.data?.message || "Login failed.");
+      toast.error(getApiErrorMessage(err, "Sign in failed. Check your email and password, then try again."));
     }
   };
 
   const handleGoogleFallback = () => {
     if (!googleClientId) {
-      toast.error("Google sign-in is not configured yet.");
+      toast.error("Google sign-in is not configured yet. Use email and password for now.");
       return;
     }
 
     if (!window.google?.accounts?.id) {
-      toast.error("Google sign-in is still loading. Please try again.");
+      toast.error("Google sign-in is still loading. Wait a moment, then try again.");
       return;
     }
 
@@ -325,7 +326,7 @@ export default function LoginPage() {
 
             {error && (
               <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error?.data?.message || "Login failed. Please try again."}
+                {getApiErrorMessage(error, "Sign in failed. Check your email and password, then try again.")}
               </div>
             )}
 

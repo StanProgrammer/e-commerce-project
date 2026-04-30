@@ -6,6 +6,7 @@ import { useRegisterUserMutation } from "../store/features/auth/authApi";
 import { useDispatch } from "react-redux";
 import { setUser } from "../store/features/auth/authSlice";
 import toast from "react-hot-toast";
+import getApiErrorMessage from "../utils/getApiErrorMessage";
 
 const passwordRequirements = [
   {
@@ -127,10 +128,10 @@ export default function Register() {
       }).unwrap();
 
       dispatch(setUser(response.user));
-      toast.success("Registration successful!");
+      toast.success("Account created. You are signed in.");
       navigate("/");
     } catch (err) {
-      toast.error(err?.data?.message || "Registration failed.");
+      toast.error(getApiErrorMessage(err, "Account could not be created. Check the form and try again."));
     }
   };
 
@@ -351,7 +352,7 @@ export default function Register() {
 
             {error && (
               <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error?.data?.message || "Registration failed. Please try again."}
+                {getApiErrorMessage(error, "Account could not be created. Check the form and try again.")}
               </div>
             )}
 

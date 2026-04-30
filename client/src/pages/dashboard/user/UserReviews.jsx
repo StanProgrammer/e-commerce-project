@@ -2,6 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useGetReviewsByUserIdQuery } from "../../../store/features/reviews/reviewsApi";
 import { useNavigate } from "react-router-dom";
+import MessageState from "../../../components/MessageState";
 
 const StarRating = ({ rating }) => {
   return (
@@ -61,9 +62,11 @@ const UserReviews = () => {
 
       {/* Error */}
       {isError && (
-        <div className="text-red-500 font-medium">
-          Failed to load reviews
-        </div>
+        <MessageState
+          tone="error"
+          title="Reviews could not be loaded"
+          message="Refresh the page or try again after checking your connection."
+        />
       )}
 
       {/* Content */}

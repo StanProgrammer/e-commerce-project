@@ -5,6 +5,8 @@ import CartModal from "./CartModal";
 import avatar from "../assets/avatar.png";
 import { useLogoutUserMutation } from "../store/features/auth/authApi";
 import { logout } from "../store/features/auth/authSlice";
+import toast from "react-hot-toast";
+import getApiErrorMessage from "../utils/getApiErrorMessage";
 const Navbar = () => {
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
@@ -31,9 +33,11 @@ const Navbar = () => {
     try {
       await logoutApi().unwrap();
       dispatch(logout())
+      toast.success("You have been signed out.", { id: "logout-success" });
      
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error(getApiErrorMessage(error, "We could not sign you out. Please try again."));
     }
   }
   const adminDropDownMenu = [

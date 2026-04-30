@@ -6,6 +6,8 @@ import {
   useFetchAllBlogsQuery,
 } from "../../../../store/features/blogs/blogsApi";
 import formatBlogDate from "../../../../utils/formatBlogDate";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const BLOGS_PER_PAGE = 10;
 
@@ -35,7 +37,7 @@ const ManageBlogs = () => {
       toast.success("Blog deleted successfully");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete blog");
+      toast.error(getApiErrorMessage(error, "Blog could not be deleted. Refresh the list and try again."));
     }
   };
 
@@ -44,7 +46,14 @@ const ManageBlogs = () => {
   }
 
   if (isError) {
-    return <div className="text-center text-red-500 mt-10">Failed to load blogs</div>;
+    return (
+      <MessageState
+        tone="error"
+        title="Blogs could not be loaded"
+        message="Refresh the page. If this continues, check that the server is running."
+        className="mt-10"
+      />
+    );
   }
 
   return (
@@ -82,7 +91,7 @@ const ManageBlogs = () => {
               {blogs.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-10 text-gray-500">
-                    No blogs found
+                    No blogs found. Create a blog post to publish content here.
                   </td>
                 </tr>
               ) : (

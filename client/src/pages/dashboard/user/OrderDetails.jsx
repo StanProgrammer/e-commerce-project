@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useGetOrderByIdQuery } from '../../../store/features/orders/orderApi';
 import TimeStep from '../../../components/TimeStep';
+import MessageState from '../../../components/MessageState';
 
 const OrderDetails = () => {
     const { user } = useSelector((state) => state.auth);
@@ -10,18 +11,16 @@ const OrderDetails = () => {
     const { data: orderDetails, isLoading, isError } = useGetOrderByIdQuery(orderId);
     if(isLoading) {
         return (
-            <div className="flex items-center justify-center h-40 text-gray-500">
-                Loading order details...
-            </div>
+            <MessageState tone="loading" title="Loading order details" message="We are checking the latest status for this order." className="min-h-[40vh]" />
         );
     }
     if(isError) {
         return (
-            <div className="flex items-center justify-center h-40 text-red-500">404 - Order not found</div>
+            <MessageState tone="error" title="Order could not be found" message="Check that the order link is correct, or return to your orders page and open it again." className="min-h-[40vh]" />
         );
     }
  if (!orderDetails) {
-    return <div>Loading...</div>;
+    return <MessageState tone="empty" title="Order details are unavailable" message="Return to your orders page and try opening this order again." className="min-h-[40vh]" />;
   }
   const isCompleted = (status) => {
     const statusMap = ["pending", "processing", "shipped", "completed"];

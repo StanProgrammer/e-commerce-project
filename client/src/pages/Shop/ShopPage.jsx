@@ -4,6 +4,7 @@ import PrdCard from "./PrdCard";
 import ShopFilters from "./ShopFilters";
 import Pagination from "../../components/Pagination";
 import { useFetchAllProductsQuery } from "../../store/features/products/productsApi";
+import MessageState from "../../components/MessageState";
 
 const filters = {
   categories: ["all", "accessories", "clothes", "jewellery", "cosmetics"],
@@ -119,11 +120,24 @@ const ShopPage = () => {
             <h3 className="text-2xl font-medium mb-4">Products Available: {data?.totalProducts ?? 0}</h3>
 
             {isLoading || isFetching ? (
-              <p>Loading products...</p>
+              <MessageState tone="loading" title="Loading products" message="We are finding products that match your filters." />
             ) : error ? (
-              <p className="text-red-500">Failed to load products.</p>
+              <MessageState
+                tone="error"
+                title="Products could not be loaded"
+                message="Refresh the page, or clear your filters and try again."
+              />
             ) : products.length === 0 ? (
-              <p>No products found.</p>
+              <MessageState
+                tone="empty"
+                title="No products match your filters"
+                message="Clear one or more filters to see more products."
+                action={
+                  <button type="button" onClick={clearFilters} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">
+                    Clear filters
+                  </button>
+                }
+              />
             ) : (
               <PrdCard products={products} />
             )}

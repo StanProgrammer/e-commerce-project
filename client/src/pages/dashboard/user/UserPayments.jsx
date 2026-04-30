@@ -1,6 +1,8 @@
 import React from 'react'
 import { useGetOrdersByEmailQuery } from '../../../store/features/orders/orderApi';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import MessageState from '../../../components/MessageState';
 
 const UserPayments = () => {
     const { user } = useSelector((state) => state.auth);
@@ -8,10 +10,10 @@ const UserPayments = () => {
         skip: !user?.email,
       });
       if(isLoading){
-        return <div>Loading...</div>
+        return <MessageState tone="loading" title="Loading payments" message="We are calculating your latest payment history." className="min-h-[40vh]" />
       }
         if(isError){
-            return <div>Error fetching orders.</div>
+            return <MessageState tone="error" title="Payment history could not be loaded" message="Refresh the page or try again after checking your connection." className="min-h-[40vh]" />
         }
 const orders = ordersData || [];
 const totalPayments = orders.reduce((total, order) => total + order.amount, 0).toFixed(2);
@@ -41,7 +43,14 @@ const totalPayments = orders.reduce((total, order) => total + order.amount, 0).t
                             </li>
                         ))
                     ) : (
-                        <li className='text-gray-500'>No orders found.</li>
+                        <li>
+                          <MessageState
+                            tone="empty"
+                            title="No payments yet"
+                            message="Your completed orders and payment totals will appear here after checkout."
+                            action={<Link to="/shop" className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">Browse products</Link>}
+                          />
+                        </li>
                     )
                 }
             </ul>

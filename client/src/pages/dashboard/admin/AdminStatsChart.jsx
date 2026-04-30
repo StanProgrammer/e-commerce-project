@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Pie, Line } from "react-chartjs-2";
 import "chart.js/auto";
+import MessageState from "../../../components/MessageState";
 
 const AdminStatsChart = ({ stats }) => {
   // 🧠 Memoized Pie Data
@@ -60,7 +61,14 @@ const AdminStatsChart = ({ stats }) => {
   };
 
   if (!stats) {
-    return <div className="mt-12 text-center text-gray-500">No data available</div>;
+    return (
+      <MessageState
+        tone="empty"
+        title="No chart data available"
+        message="Charts will appear after orders, users, reviews, or products are available."
+        className="mt-12"
+      />
+    );
   }
 
   return (

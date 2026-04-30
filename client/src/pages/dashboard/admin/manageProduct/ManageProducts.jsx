@@ -5,6 +5,8 @@ import {
 } from "../../../../store/features/products/productsApi";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const PRODUCTS_PER_PAGE = 10;
 
@@ -50,7 +52,7 @@ const ManageProducts = () => {
       toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error("Failed to delete product");
+      toast.error(getApiErrorMessage(error, "Product could not be deleted. Refresh the list and try again."));
     }
   };
 
@@ -66,9 +68,12 @@ const ManageProducts = () => {
 
   if (isError) {
     return (
-      <div className="text-center text-red-500 mt-10">
-        Failed to load products
-      </div>
+      <MessageState
+        tone="error"
+        title="Products could not be loaded"
+        message="Refresh the page. If this continues, check that the server is running."
+        className="mt-10"
+      />
     );
   }
 
@@ -108,7 +113,7 @@ const ManageProducts = () => {
                     colSpan="5"
                     className="text-center py-10 text-gray-500"
                   >
-                    No products found
+                    No products found. Add a product to start managing your catalog.
                   </td>
                 </tr>
               ) : (

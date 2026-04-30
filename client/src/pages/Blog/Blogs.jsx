@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useFetchAllBlogsQuery } from '../../store/features/blogs/blogsApi'
 import BlogCard from './BlogCard'
+import MessageState from '../../components/MessageState'
 
 const Blogs = () => {
   const { data = {}, isLoading, isError } = useFetchAllBlogsQuery({ page: 1, limit: 4 })
@@ -21,7 +22,14 @@ const Blogs = () => {
         {!isLoading && !isError && blogs.map((blog) => <BlogCard key={blog._id} blog={blog} />)}
       </div>
 
-      {isError && <p className="mt-8 text-center text-red-500">Failed to load blogs.</p>}
+      {isError && (
+        <MessageState
+          tone="error"
+          title="Latest blogs could not be loaded"
+          message="Refresh the page or visit the blog page again in a moment."
+          className="mt-8"
+        />
+      )}
 
       {!isLoading && blogs.length > 0 && (
         <div className="mt-8 text-center">

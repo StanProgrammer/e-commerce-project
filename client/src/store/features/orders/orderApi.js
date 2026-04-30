@@ -13,7 +13,11 @@ const orderApi = createApi({
             query: (email) => ({
                 url: `/${email}`,
                 method: "GET",  
+                validateStatus: (response, body) =>
+                    response.status === 200 ||
+                    (response.status === 404 && body?.message === "No orders found for this email"),
             }),
+                transformResponse: (response) => Array.isArray(response) ? response : [],
                 providesTags: ["Orders"],
         }),
         getOrderById: builder.query({

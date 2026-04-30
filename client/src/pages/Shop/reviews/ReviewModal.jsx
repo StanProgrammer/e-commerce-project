@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { usePostReviewMutation } from "../../../store/features/reviews/reviewsApi";
 
 import toast from "react-hot-toast";
+import getApiErrorMessage from "../../../utils/getApiErrorMessage";
 import { useGetSingleProductQuery } from "../../../store/features/products/productsApi";
 
 const ReviewModal = ({ isOpen, onClose }) => {
@@ -23,7 +24,7 @@ const ReviewModal = ({ isOpen, onClose }) => {
     e.preventDefault();
 
     if (!rating || !comment.trim()) {
-      toast.error("Please provide both rating and comment.");
+      toast.error("Choose a rating and write a short comment before submitting.");
       return;
     }
 
@@ -34,16 +35,13 @@ const ReviewModal = ({ isOpen, onClose }) => {
         comment,
       }).unwrap();
 
-      toast.success("Review submitted successfully!");
+      toast.success("Review submitted. Thanks for sharing your feedback.");
       setComment("");
       setRating(0);
       onClose();
       refetch();
     } catch (err) {
-      const validationError = err?.data?.details?.[0]?.message;
-      const generalError = err?.data?.message;
-
-      toast.error(validationError || generalError || "Failed to submit review");
+      toast.error(getApiErrorMessage(err, "Review could not be submitted. Please try again."));
     }
   };
 

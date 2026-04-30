@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { useUpdateUserRoleMutation } from '../../../../store/features/auth/authApi';
+import toast from 'react-hot-toast';
+import getApiErrorMessage from '../../../../utils/getApiErrorMessage';
 
 const UpdateUserModal = ({ user, onClose, onRoleUpdate }) => {
     const [role, setRole] = useState(user.role);
@@ -8,11 +10,12 @@ const UpdateUserModal = ({ user, onClose, onRoleUpdate }) => {
     const handleUpdateRole = async () => {
         try {
             await updateUserRole({ userId: user?._id, role }).unwrap();
-            alert('Updated role successfully!')
+            toast.success(`Role updated to ${role}.`);
             onRoleUpdate();
             onClose();
         } catch (error) {
             console.error("Failed to update user role", error);
+            toast.error(getApiErrorMessage(error, "Role could not be updated. Please try again."));
         }
     }
 

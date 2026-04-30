@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAddBlogMutation } from "../../../../store/features/blogs/blogsApi";
 import BlogForm from "./BlogForm";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const AddBlog = () => {
   const navigate = useNavigate();
@@ -11,11 +12,11 @@ const AddBlog = () => {
   const handleSubmit = async (formData) => {
     try {
       await addBlog(formData).unwrap();
-      toast.success("Blog created successfully");
+      toast.success("Blog created. You can manage it from the blog list.");
       navigate("/dashboard/manage-blogs");
     } catch (error) {
       console.error(error);
-      toast.error(error?.data?.message || "Failed to create blog");
+      toast.error(getApiErrorMessage(error, "Blog could not be created. Check the form and try again."));
     }
   };
 

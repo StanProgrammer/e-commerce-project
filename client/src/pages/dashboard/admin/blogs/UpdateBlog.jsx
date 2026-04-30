@@ -6,6 +6,8 @@ import {
   useUpdateBlogMutation,
 } from "../../../../store/features/blogs/blogsApi";
 import BlogForm from "./BlogForm";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const UpdateBlog = () => {
   const { id } = useParams();
@@ -16,23 +18,26 @@ const UpdateBlog = () => {
   const handleSubmit = async (formData) => {
     try {
       await updateBlog({ id, formData }).unwrap();
-      toast.success("Blog updated successfully");
+      toast.success("Blog updated. Your changes have been saved.");
       navigate("/dashboard/manage-blogs");
     } catch (error) {
       console.error(error);
-      toast.error(error?.data?.message || "Failed to update blog");
+      toast.error(getApiErrorMessage(error, "Blog could not be updated. Check the form and try again."));
     }
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-60 text-gray-500">Loading blog...</div>;
+    return <MessageState tone="loading" title="Loading blog" message="We are fetching the post details for editing." className="h-60" />;
   }
 
   if (isError || !data?.blog) {
     return (
-      <div className="text-center text-red-500 mt-10">
-        Failed to load blog
-      </div>
+      <MessageState
+        tone="error"
+        title="Blog could not be loaded"
+        message="Return to the blog list and try opening this post again."
+        className="mt-10"
+      />
     );
   }
 

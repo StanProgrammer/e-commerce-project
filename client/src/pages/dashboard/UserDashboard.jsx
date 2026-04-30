@@ -4,6 +4,8 @@ import { useLogoutUserMutation } from "../../store/features/auth/authApi";
 import { logout } from "../../store/features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import avatar from "../../assets/avatar.png";
+import toast from "react-hot-toast";
+import getApiErrorMessage from "../../utils/getApiErrorMessage";
 
 const UserDashboard = () => {
   const [logoutUser, { isLoading }] = useLogoutUserMutation();
@@ -26,9 +28,11 @@ const UserDashboard = () => {
     try {
       await logoutUser().unwrap();
       dispatch(logout());
-      navigate("/");
+      toast.success("You have been signed out.", { id: "logout-success" });
+      navigate("/", { replace: true });
     } catch (error) {
       console.error(error);
+      toast.error(getApiErrorMessage(error, "We could not sign you out. Please try again."));
     }
   };
 

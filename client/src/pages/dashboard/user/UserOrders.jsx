@@ -2,6 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
 import { Link } from "react-router-dom";
+import MessageState from "../../../components/MessageState";
 
 const statusStyles = {
   completed: "bg-green-100 text-green-700",
@@ -23,9 +24,10 @@ const UserOrders = () => {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-40 text-gray-500">
-        Please log in to view your orders.
-      </div>
+      <MessageState
+        title="Sign in to view orders"
+        message="Your order history is linked to your account. Sign in, then return to this page."
+      />
     );
   }
 
@@ -58,14 +60,24 @@ const UserOrders = () => {
               ))}
             </div>
           ) : isError ? (
-            <div className="p-6 text-center text-red-500">
-              Failed to load orders.
-            </div>
+            <MessageState
+              tone="error"
+              title="Orders could not be loaded"
+              message="Refresh the page or try again after checking your connection."
+              className="m-6"
+            />
           ) : orders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-              <p className="text-lg font-medium">No orders yet</p>
-              <p className="text-sm">Start shopping to see your orders here</p>
-            </div>
+            <MessageState
+              tone="empty"
+              title="No orders yet"
+              message="Start shopping to see your order history, payment totals, and delivery status here."
+              action={
+                <Link to="/shop" className="inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">
+                  Browse products
+                </Link>
+              }
+              className="m-6"
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">

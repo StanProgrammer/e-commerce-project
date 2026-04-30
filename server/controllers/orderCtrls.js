@@ -118,10 +118,7 @@ const confirmPayment = asyncHandler(async (req, res) => {
 //get orders by email address
 const getOrdersByEmail = asyncHandler(async (req, res) => {
   const { email } = req.params;
-  const orders = await Order.find({ email });
-  if (!orders || orders.length === 0) {
-    return res.status(404).json({ orders:0,message: "No orders found for this email" });
-  }
+  const orders = await Order.find({ email }).sort({ createdAt: -1 });
   res.status(200).json(orders);
 });
 

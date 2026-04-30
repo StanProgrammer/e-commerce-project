@@ -3,14 +3,21 @@ import { useDispatch } from "react-redux";
 import { clearCart } from "../store/features/cart/cartSlice";
 import getBaseUrl from "../utils/baseUrl";
 import TimeStep from "./TimeStep";
+import MessageState from "./MessageState";
 
 const PaymentSuccess = () => {
   const [orderDetails, setOrderDetails] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
   const dispatch = useDispatch();
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const sessionId = queryParams.get("session_id");
+    if (!sessionId) {
+      setStatusMessage("Payment session is missing. Return to your orders page to confirm your order status.");
+      return;
+    }
+
     if (sessionId) {
       fetch(`${getBaseUrl()}/api/orders/confirm-payment`, {
         method: "POST",
@@ -21,21 +28,33 @@ const PaymentSuccess = () => {
         body: JSON.stringify({ sessionId })
 
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Payment confirmation failed.");
+          }
+          return response.json();
+        })
         .then((data) => {
-          console.log("Order details:", data);
+          if (!data?.order) {
+            throw new Error("Order details were not returned.");
+          }
           setOrderDetails(data.order);
           if (data?.order) {
             dispatch(clearCart());
           }
         })
         .catch((error) => {
-          console.log("Error fetching order details:", error);
+          console.error("Error fetching order details:", error);
+          setStatusMessage("Payment was received, but we could not load the order details. Check your orders page for the latest status.");
         });
     }
   }, [dispatch]);
+  if (statusMessage) {
+    return <MessageState tone="error" title="Order confirmation needs attention" message={statusMessage} className="section__container" />;
+  }
+
   if (!orderDetails) {
-    return <div>Loading...</div>;
+    return <MessageState tone="loading" title="Confirming your payment" message="Please wait while we verify your payment and prepare your order details." className="section__container" />;
   }
   const isCompleted = (status) => {
     const statusMap = ["pending", "processing", "shipped", "completed"];

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import PrdCard from './PrdCard'
 import { useFetchAllProductsQuery } from '../../store/features/products/productsApi'
+import MessageState from '../../components/MessageState'
 
 const TrendingPrds = () => {
   const [visibleProducts, setVisibleProducts] = useState(8)
@@ -23,11 +24,11 @@ const TrendingPrds = () => {
   const showAll = visibleProducts >= products.length
 
   if (isLoading) {
-    return <div>Loading trending products...</div>;
+    return <MessageState tone="loading" title="Loading trending products" message="We are fetching the latest popular picks." />;
   }
 
   if (isError) {
-    return <div>Error loading trending products.</div>;
+    return <MessageState tone="error" title="Trending products could not be loaded" message="Refresh the page or visit the shop to browse all products." />;
   }
 
   return (

@@ -5,6 +5,7 @@ import SelectInput from "./SelectInput";
 import UploadImage from "./UploadImage";
 import { useAddProductMutation } from "../../../../store/features/products/productsApi";
 import toast from "react-hot-toast";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 const categories = [
   { label: "Select Category", value: "" },
   { label: "Accessories", value: "accessories" },
@@ -97,10 +98,10 @@ const handleSubmit = async (e) => {
 
     setImages([]);
     setErrors({});
-    toast.success("Product added successfully");
+    toast.success("Product added. It is now available in the catalog.");
   } catch (err) {
     console.error(err);
-    toast.error("Failed to add product");
+    toast.error(getApiErrorMessage(err, "Product could not be added. Check the form and try again."));
   } finally {
     setLoading(false);
   }

@@ -4,6 +4,7 @@ import { useGetUserStatsQuery } from "../../../store/features/stats/statsApi";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 import UserStats from "./UserStats";
+import MessageState from "../../../components/MessageState";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -13,25 +14,34 @@ const UserMain = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">
-        Loading dashboard...
-      </div>
+      <MessageState
+        tone="loading"
+        title="Loading your dashboard"
+        message="We are fetching your latest purchase and review activity."
+        className="min-h-[60vh]"
+      />
     );
   }
 
   if (isError) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center rounded-lg border border-red-100 bg-red-50 text-sm font-semibold text-red-600">
-        Failed to load dashboard data.
-      </div>
+      <MessageState
+        tone="error"
+        title="Dashboard data could not be loaded"
+        message="Refresh the page in a moment. If it keeps happening, check your connection or sign in again."
+        className="min-h-[60vh]"
+      />
     );
   }
 
   if (!stats) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-500 shadow-sm">
-        No stats available.
-      </div>
+      <MessageState
+        tone="empty"
+        title="No dashboard activity yet"
+        message="Your purchases and reviews will appear here after you start shopping."
+        className="min-h-[60vh]"
+      />
     );
   }
 

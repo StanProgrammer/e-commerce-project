@@ -6,6 +6,8 @@ import {
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import UpdateOrderModal from "./UpdateOrderModal";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const ManageOrders = () => {
   const { data, isLoading, isError, error, refetch } =
@@ -41,7 +43,7 @@ const ManageOrders = () => {
     } catch (err) {
       console.error(err);
       toast.error(
-        err?.data?.message || "Failed to delete order"
+        getApiErrorMessage(err, "Order could not be deleted. Refresh the list and try again.")
       );
     }
   };
@@ -69,20 +71,19 @@ const ManageOrders = () => {
   if (isError) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-md">
-          <p className="font-medium">
-            Failed to load orders
-          </p>
-          <p className="text-sm mt-1">
-            {error?.data?.message || "Something went wrong"}
-          </p>
-          <button
-            onClick={refetch}
-            className="mt-3 px-4 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
-          >
-            Retry
-          </button>
-        </div>
+        <MessageState
+          tone="error"
+          title="Orders could not be loaded"
+          message={getApiErrorMessage(error, "Refresh the page. If this continues, check that the server is running.")}
+          action={
+            <button
+              onClick={refetch}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              Retry
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -101,9 +102,11 @@ const ManageOrders = () => {
       {/* ---------------- Empty State ---------------- */}
       {orders.length === 0 ? (
         <div className="text-center py-10 border rounded-lg bg-gray-50">
-          <p className="text-gray-500">
-            No orders found
-          </p>
+          <MessageState
+            tone="empty"
+            title="No orders yet"
+            message="Customer orders will appear here after checkout."
+          />
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-lg">

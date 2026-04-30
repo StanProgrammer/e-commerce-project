@@ -3,6 +3,8 @@ import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useLogoutUserMutation } from "../../store/features/auth/authApi";
 import { logout } from "../../store/features/auth/authSlice";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import getApiErrorMessage from "../../utils/getApiErrorMessage";
 
 const AdminDashboard = () => {
   const [logoutUser, { isLoading }] = useLogoutUserMutation();
@@ -29,9 +31,11 @@ const AdminDashboard = () => {
       setLoggingOut(true);
       await logoutUser().unwrap();
       dispatch(logout());
-      navigate("/");
+      toast.success("You have been signed out.", { id: "logout-success" });
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error(getApiErrorMessage(error, "We could not sign you out. Please try again."));
     } finally {
       setLoggingOut(false);
     }

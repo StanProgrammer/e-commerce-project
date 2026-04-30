@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useUpdateOrderStatusMutation } from "../../../../store/features/orders/orderApi";
 import toast from "react-hot-toast";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const UpdateOrderModal = ({ order, isOpen, onClose }) => {
   const [status, setStatus] = useState("");
@@ -16,7 +17,7 @@ const UpdateOrderModal = ({ order, isOpen, onClose }) => {
 
   const handleUpdateOrderStatus = async () => {
     if (!order?._id) {
-      toast.error("Invalid order");
+      toast.error("This order could not be identified. Close the modal and open the order again.");
       return;
     }
 
@@ -26,12 +27,12 @@ const UpdateOrderModal = ({ order, isOpen, onClose }) => {
         status,
       }).unwrap();
 
-      toast.success("Order updated successfully");
+      toast.success(`Order status updated to ${status}.`);
       onClose();
     } catch (err) {
       console.error(err);
       toast.error(
-        err?.data?.message || "Failed to update order"
+        getApiErrorMessage(err, "Order status could not be updated. Please try again.")
       );
     }
   };
@@ -66,7 +67,7 @@ const UpdateOrderModal = ({ order, isOpen, onClose }) => {
 
         {error && (
           <p className="text-sm text-red-500 mb-3">
-            {error?.data?.message || "Failed to update"}
+            {getApiErrorMessage(error, "Order status could not be updated. Please try again.")}
           </p>
         )}
 

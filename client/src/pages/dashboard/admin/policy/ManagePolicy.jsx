@@ -5,6 +5,7 @@ import {
   useUpdatePolicyMutation,
 } from "../../../../store/features/policy/policyApi";
 import defaultPolicy from "../../../../data/defaultPolicy";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const emptySection = {
   category: "general",
@@ -111,10 +112,10 @@ const ManagePolicy = () => {
           order: index + 1,
         })),
       }).unwrap();
-      toast.success("Policy updated successfully");
+      toast.success("Policy updated. The public policy page now uses your latest content.");
     } catch (error) {
       console.error(error);
-      toast.error(error?.data?.message || "Failed to update policy");
+      toast.error(getApiErrorMessage(error, "Policy could not be updated. Check the form and try again."));
     }
   };
 

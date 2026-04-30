@@ -7,6 +7,8 @@ import {
   useGetUserProfileQuery,
 } from "../../../../store/features/auth/authApi";
 import toast from "react-hot-toast";
+import MessageState from "../../../../components/MessageState";
+import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const ManageUser = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,8 +27,8 @@ const ManageUser = () => {
       await deleteUser(id).unwrap();
       toast.success("User deleted successfully");
       refetch();
-    } catch {
-      toast.error("Failed to delete user");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "User could not be deleted. Refresh the list and try again."));
     }
   };
 
@@ -84,13 +86,17 @@ const ManageUser = () => {
                 ) : error ? (
                   <tr>
                     <td colSpan="4" className="text-center py-10 text-red-500">
-                      Failed to load users
+                      <MessageState
+                        tone="error"
+                        title="Users could not be loaded"
+                        message="Refresh the page. If this continues, check that the server is running."
+                      />
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
                     <td colSpan="4" className="text-center py-10 text-gray-500">
-                      No users found
+                      No users found. New customer accounts will appear here after registration.
                     </td>
                   </tr>
                 ) : (
