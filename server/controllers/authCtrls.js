@@ -125,7 +125,29 @@ const googleLogin = asyncHandler(async (req, res) => {
     return res.status(401).json({ message: "Google account email is not verified." });
   }
 
-  let user = await User.findOne({ email: googleData.email, isDeleted: false });
+  const googleEmail = googleData.email.toLowerCase();
+  const [googleUser, emailUser] = await Promise.all([
+    User.findOne({ googleId: googleData.sub, isDeleted: false }),
+    User.findOne({ email: googleEmail }),
+  ]);
+
+  if (emailUser?.isDeleted) {
+    return res.status(403).json({ message: "This account is no longer active." });
+  }
+
+  if (emailUser?.googleId && emailUser.googleId !== googleData.sub) {
+    return res.status(409).json({
+      message: "This email is already linked to another Google account.",
+    });
+  }
+
+  if (googleUser && emailUser && !googleUser._id.equals(emailUser._id)) {
+    return res.status(409).json({
+      message: "This Google account is already linked to another user.",
+    });
+  }
+
+  let user = googleUser || emailUser;
 
   if (!user) {
     const username = await buildUniqueUsername(googleData.name || googleData.email.split("@")[0]);
@@ -133,14 +155,28 @@ const googleLogin = asyncHandler(async (req, res) => {
 
     user = await User.create({
       username,
-      email: googleData.email,
+      email: googleEmail,
+      googleId: googleData.sub,
       password: randomPassword,
       profilePic: googleData.picture || "",
       role: "user",
     });
-  } else if (googleData.picture && user.profilePic !== googleData.picture) {
-    user.profilePic = googleData.picture;
-    await user.save();
+  } else {
+    let shouldSaveUser = false;
+
+    if (!user.googleId) {
+      user.googleId = googleData.sub;
+      shouldSaveUser = true;
+    }
+
+    if (googleData.picture && user.profilePic !== googleData.picture) {
+      user.profilePic = googleData.picture;
+      shouldSaveUser = true;
+    }
+
+    if (shouldSaveUser) {
+      await user.save();
+    }
   }
 
   res.cookie('token', generateToken(user), cookieOptions);
