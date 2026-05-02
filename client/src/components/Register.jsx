@@ -165,10 +165,6 @@ export default function Register() {
 
             <div className="mt-8 space-y-3">
               <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
-                <p className="text-lg font-semibold">Save your favorites</p>
-                <p className="mt-2 text-sm text-white/75">Build your own shortlist and come back to it from any device.</p>
-              </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
                 <p className="text-lg font-semibold">Track every order</p>
                 <p className="mt-2 text-sm text-white/75">Manage purchases, reviews, and account details in one place.</p>
               </div>
@@ -177,7 +173,7 @@ export default function Register() {
 
           <div className="relative flex flex-wrap gap-3 text-sm text-white/70">
             <span className="rounded-full border border-white/15 px-4 py-2">Secure signup</span>
-            <span className="rounded-full border border-white/15 px-4 py-2">Mobile-friendly form</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">Mobile-friendly</span>
           </div>
         </div>
 
