@@ -2,7 +2,12 @@
 const User = require('../models/userModel');
 const asyncHandler = require('../middlewares/asyncHandler');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { cookieOptions, generateToken } = require('../utils/helper');
+const { sendPasswordResetEmail } = require('../utils/email');
+
+const RESET_TOKEN_EXPIRY_MINUTES = 15;
+const RESET_EMAIL_RESPONSE = "If an account exists for that email, a password reset link has been sent.";
 
 const buildUserResponse = (user) => ({
   id: user._id,
@@ -187,6 +192,73 @@ const googleLogin = asyncHandler(async (req, res) => {
   });
 });
 
+const buildClientUrl = (path) => {
+  const configuredUrl = process.env.PASSWORD_RESET_CLIENT_URL || process.env.CLIENT_URL || "http://localhost:5173";
+  return `${configuredUrl.replace(/\/+$/g, "")}${path}`;
+};
+
+const hashResetToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email, isDeleted: false });
+
+  if (!user) {
+    return res.status(200).json({ message: RESET_EMAIL_RESPONSE });
+  }
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  user.passwordResetToken = hashResetToken(resetToken);
+  user.passwordResetExpires = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = buildClientUrl(`/reset-password/${resetToken}`);
+
+  try {
+    await sendPasswordResetEmail({
+      to: user.email,
+      resetUrl,
+      username: user.username,
+    });
+
+    return res.status(200).json({ message: RESET_EMAIL_RESPONSE });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    console.error("Password reset email failed:", err.code || err.message);
+
+    return res.status(500).json({
+      message: "Password reset email could not be sent. Please try again later.",
+    });
+  }
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  const passwordResetToken = hashResetToken(token);
+
+  const user = await User.findOne({
+    passwordResetToken,
+    passwordResetExpires: { $gt: new Date() },
+    isDeleted: false,
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: "This reset link is invalid or has expired." });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  res.clearCookie('token');
+
+  return res.status(200).json({ message: "Password updated successfully. You can now sign in." });
+});
+
 const logout = (req, res) => {
   res.clearCookie('token');
   return res.status(200).json({ message: 'Logged out successfully.' });
@@ -205,6 +277,8 @@ module.exports = {
   register,
   login,
   googleLogin,
+  forgotPassword,
+  resetPassword,
   logout,
   verifyMe
 };

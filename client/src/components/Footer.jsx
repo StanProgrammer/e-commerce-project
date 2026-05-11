@@ -32,7 +32,7 @@ const Footer = () => {
           <span>
             <i className="ri-phone-fill"></i>
           </span>
-          +1 (555) 123-4567
+          +91 (702) 353-286
         </p>
       </div>
       <div className="footer__col">

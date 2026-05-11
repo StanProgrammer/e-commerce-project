@@ -1,7 +1,13 @@
 // routes/authRoutes.js
 const express = require('express');
 const validateBody = require('../middlewares/validateBody');
-const { registerSchema, loginSchema, googleLoginSchema } = require('../validation/authValidator');
+const {
+  registerSchema,
+  loginSchema,
+  googleLoginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} = require('../validation/authValidator');
 const authCtrls = require('../controllers/authCtrls');
 const router = express.Router();
 const { verifyToken } = require('../utils/helper');
@@ -13,6 +19,8 @@ router.get('/', (req, res) => res.send('Auth routes'));
 router.post('/register', validateBody(registerSchema), authCtrls.register);
 router.post('/login', validateBody(loginSchema), authCtrls.login);
 router.post('/google', validateBody(googleLoginSchema), authCtrls.googleLogin);
+router.post('/forgot-password', validateBody(forgotPasswordSchema), authCtrls.forgotPassword);
+router.post('/reset-password', validateBody(resetPasswordSchema), authCtrls.resetPassword);
 
 router.get("/me", verifyToken, authCtrls.verifyMe);
 

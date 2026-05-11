@@ -39,8 +39,35 @@ const googleLoginSchema = Joi.object({
   }),
 });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email().required().messages({
+    "string.email": "Email must be a valid email address",
+    "string.empty": "Email is required",
+  }),
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().trim().hex().length(64).required().messages({
+    "string.empty": "Reset token is required",
+    "string.hex": "Reset token is invalid",
+    "string.length": "Reset token is invalid",
+  }),
+  password: Joi.string()
+    .min(8)
+    .max(128)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/)
+    .required()
+    .messages({
+      "string.min": "Password must be at least 8 characters",
+      "string.empty": "Password is required",
+      "string.pattern.base": "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character",
+    }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   googleLoginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 };

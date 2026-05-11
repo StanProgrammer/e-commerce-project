@@ -10,6 +10,8 @@ import ContactPage from "../pages/Contact/ContactPage.jsx";
 import Team from "../pages/Team/Team.jsx";
 import Login from "../components/Login.jsx";
 import Register from "../components/Register.jsx";
+import ForgotPassword from "../components/ForgotPassword.jsx";
+import ResetPassword from "../components/ResetPassword.jsx";
 import PaymentSuccess from "../components/PaymentSuccess.jsx";
 import Dashboard from "../pages/dashboard/Dashboard.jsx";
 import Privateroutes from "./Privateroutes.jsx";
@@ -109,6 +111,14 @@ const router = createBrowserRouter ([
   {
     path: "/register",
     element:<Register/>
+  },
+  {
+    path: "/forgot-password",
+    element:<ForgotPassword/>
+  },
+  {
+    path: "/reset-password/:token",
+    element:<ResetPassword/>
   },
   // dashboard routes
   {

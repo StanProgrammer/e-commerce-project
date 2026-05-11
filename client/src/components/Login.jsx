@@ -277,9 +277,9 @@ export default function LoginPage() {
               <label className="block">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-slate-700">Password</span>
-                  <button type="button" className="text-xs font-medium text-primary transition hover:underline">
+                  <Link to="/forgot-password" className="text-xs font-medium text-primary transition hover:underline">
                     Forgot password?
-                  </button>
+                  </Link>
                 </div>
 
                 <div className="relative">

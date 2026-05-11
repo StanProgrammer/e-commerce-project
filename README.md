@@ -7,7 +7,7 @@ A full-stack MERN ecommerce application with a React storefront, user dashboard,
 - Product browsing, search, category pages, and product details
 - Shopping cart and checkout flow
 - Stripe payment integration
-- User authentication with JWT and Google login support
+- User authentication with JWT, Google login support, and email password resets
 - User dashboard for orders, payments, reviews, and profile management
 - Admin dashboard for products, users, orders, blogs, policies, and statistics
 - Product image uploads with Cloudinary
@@ -109,6 +109,9 @@ RESEND_API_KEY=your_resend_api_key
 CONTACT_TO_EMAIL=your_contact_receiver_email
 CONTACT_FROM_EMAIL=your_verified_sender_email
 GOOGLE_CLIENT_ID=your_google_client_id
+GMAIL_USER=your_gmail_address
+GMAIL_APP_PASSWORD=your_gmail_app_password
+PASSWORD_RESET_CLIENT_URL=http://localhost:5173
 ```
 
 Create a `.env` file in `client/`:

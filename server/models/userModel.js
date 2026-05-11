@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     profilePic:{ type: String, default: '' },
     bio:{ type: String, maxlength: 500, default: '' },
     profession:{ type: String, maxlength: 100, default: '' },
+    passwordResetToken: { type: String, default: undefined },
+    passwordResetExpires: { type: Date, default: undefined },
     isDeleted: { type: Boolean, default: false }
 },
 { timestamps: true }
