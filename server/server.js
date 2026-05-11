@@ -91,6 +91,12 @@ app.use('/api/policy', policyRoutes);
 
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    dbState: mongoose.connection.readyState,
+  });
+});
 
 // --- Error handling middleware (last) ---
 // app.use(errorHandler);
@@ -99,7 +105,9 @@ app.get('/', (req, res) => res.send('Wiles and Rues'));
 const PORT = process.env.PORT || 5000;
 async function start() {
   try {
-    await mongoose.connect(process.env.DB_URL, {  });
+    await mongoose.connect(process.env.DB_URL, {
+      serverSelectionTimeoutMS: 15000,
+    });
     console.log('Connected to MongoDB');
     await seedDefaultBlogs();
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

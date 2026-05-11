@@ -6,6 +6,7 @@ const authApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${getBaseUrl()}/api`,
     credentials: "include",
+    timeout: 20000,
   }),
   tagTypes: ["User"],
   endpoints: (builder) => ({
