@@ -39,29 +39,55 @@ const generateToken = (user) => {
   });
 };
 
-const verifyToken = (req, res, next) => {
+const getRequestToken = (req) => {
   const bearerToken = req.headers.authorization?.startsWith("Bearer ")
     ? req.headers.authorization.slice(7)
     : null;
-  const token = req.cookies.token || bearerToken;
+
+  return req.cookies.token || bearerToken;
+};
+
+const decodeToken = (token) => {
+  requireEnv([["JWT_SECRET", config.jwtSecret]], "authentication");
+  return jwt.verify(token, config.jwtSecret);
+};
+
+const verifyToken = (req, res, next) => {
+  const token = getRequestToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "You need to login to do this action." });
   }
 
   try {
-    requireEnv([["JWT_SECRET", config.jwtSecret]], "authentication");
-    const decoded = jwt.verify(token, config.jwtSecret);
-    req.user = decoded;
+    req.user = decodeToken(token);
     next();
   } catch (err) {
     return res.status(401).json({ message: "Session expired" });
   }
 };
 
+const optionalVerifyToken = (req, res, next) => {
+  const token = getRequestToken(req);
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    req.user = decodeToken(token);
+  } catch (err) {
+    req.user = null;
+  }
+
+  return next();
+};
+
 module.exports = {
   generateToken,
   cookieOptions,
   clearCookieOptions,
+  optionalVerifyToken,
   verifyToken,
 };

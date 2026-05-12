@@ -10,7 +10,7 @@ const {
 } = require('../validation/authValidator');
 const authCtrls = require('../controllers/authCtrls');
 const router = express.Router();
-const { verifyToken } = require('../utils/helper');
+const { optionalVerifyToken } = require('../utils/helper');
 
 // GET 
 router.get('/', (req, res) => res.send('Auth routes'));
@@ -22,7 +22,7 @@ router.post('/google', validateBody(googleLoginSchema), authCtrls.googleLogin);
 router.post('/forgot-password', validateBody(forgotPasswordSchema), authCtrls.forgotPassword);
 router.post('/reset-password', validateBody(resetPasswordSchema), authCtrls.resetPassword);
 
-router.get("/me", verifyToken, authCtrls.verifyMe);
+router.get("/me", optionalVerifyToken, authCtrls.verifyMe);
 
 router.post('/logout',authCtrls.logout); 
 module.exports = router;

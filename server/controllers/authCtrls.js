@@ -266,9 +266,23 @@ const logout = (req, res) => {
 }
 
 const verifyMe = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(200).json({
+      isAuthenticated: false,
+      user: null,
+    });
+  }
+
   const user = await User.findById(req.user.sub).select("-password");
 
-  res.status(200).json({
+  if (!user || user.isDeleted) {
+    return res.status(200).json({
+      isAuthenticated: false,
+      user: null,
+    });
+  }
+
+  return res.status(200).json({
     isAuthenticated: true,
     user,
   });

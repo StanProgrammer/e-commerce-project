@@ -20,7 +20,12 @@ function App() {
 
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
-      dispatch(setUser(data.user));
+
+      if (data.isAuthenticated && data.user) {
+        dispatch(setUser(data.user));
+      } else {
+        dispatch(markAuthChecked());
+      }
 
     } catch {
       dispatch(markAuthChecked());
