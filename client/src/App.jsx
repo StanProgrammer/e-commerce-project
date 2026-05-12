@@ -20,11 +20,9 @@ function App() {
 
       if (!res.ok) throw new Error("Not authenticated");
       const data = await res.json();
-      console.log("Auth check success:", data);
       dispatch(setUser(data.user));
 
-    } catch (err) {
-      console.error("Auth check failed:", err);
+    } catch {
       dispatch(markAuthChecked());
     }
   };

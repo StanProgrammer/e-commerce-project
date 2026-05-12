@@ -3,8 +3,9 @@ const User = require('../models/userModel');
 const asyncHandler = require('../middlewares/asyncHandler');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { cookieOptions, generateToken } = require('../utils/helper');
+const { clearCookieOptions, cookieOptions, generateToken } = require('../utils/helper');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { config } = require('../config/env');
 
 const RESET_TOKEN_EXPIRY_MINUTES = 15;
 const RESET_EMAIL_RESPONSE = "If an account exists for that email, a password reset link has been sent.";
@@ -105,7 +106,7 @@ const login = asyncHandler(async (req, res) => {
 
 const googleLogin = asyncHandler(async (req, res) => {
   const { credential } = req.body;
-  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientId = config.googleClientId;
 
   if (!googleClientId) {
     return res.status(500).json({ message: "Google login is not configured on the server." });
@@ -193,7 +194,7 @@ const googleLogin = asyncHandler(async (req, res) => {
 });
 
 const buildClientUrl = (path) => {
-  const configuredUrl = process.env.PASSWORD_RESET_CLIENT_URL || process.env.CLIENT_URL || "http://localhost:5173";
+  const configuredUrl = config.passwordResetClientUrl || config.clientUrl || "http://localhost:5173";
   return `${configuredUrl.replace(/\/+$/g, "")}${path}`;
 };
 
@@ -254,13 +255,13 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  res.clearCookie('token');
+  res.clearCookie('token', clearCookieOptions);
 
   return res.status(200).json({ message: "Password updated successfully. You can now sign in." });
 });
 
 const logout = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', clearCookieOptions);
   return res.status(200).json({ message: 'Logged out successfully.' });
 }
 

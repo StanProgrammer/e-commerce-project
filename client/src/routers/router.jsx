@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router-dom";
-import { useSelector } from "react-redux";
 import App from "../App.jsx";
 import Home from "../pages/Home/Home.jsx";
 import CategoryPage from "../pages/Category/CategoryPage.jsx";
@@ -15,8 +14,8 @@ import ResetPassword from "../components/ResetPassword.jsx";
 import PaymentSuccess from "../components/PaymentSuccess.jsx";
 import Dashboard from "../pages/dashboard/Dashboard.jsx";
 import Privateroutes from "./Privateroutes.jsx";
+import DashboardOrders from "./DashboardOrders.jsx";
 import UserMain from "../pages/dashboard/user/UserMain.jsx";
-import UserOrders from "../pages/dashboard/user/UserOrders.jsx";
 import OrderDetails from "../pages/dashboard/user/OrderDetails.jsx";
 import UserPayments from "../pages/dashboard/user/UserPayments.jsx";
 import UserReviews from "../pages/dashboard/user/UserReviews.jsx";
@@ -34,20 +33,6 @@ import ManageBlogs from "../pages/dashboard/admin/blogs/ManageBlogs.jsx";
 import UpdateBlog from "../pages/dashboard/admin/blogs/UpdateBlog.jsx";
 import PolicyPage from "../pages/Policy/PolicyPage.jsx";
 import ManagePolicy from "../pages/dashboard/admin/policy/ManagePolicy.jsx";
-
-const DashboardOrders = () => {
-  const { user } = useSelector((state) => state.auth);
-
-  if (user?.role === "admin") {
-    return (
-      <Privateroutes role="admin">
-        <ManageOrders />
-      </Privateroutes>
-    );
-  }
-
-  return <UserOrders />;
-};
 
 const router = createBrowserRouter ([
   {

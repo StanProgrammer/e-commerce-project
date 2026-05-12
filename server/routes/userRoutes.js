@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 
 const { verifyToken } = require('../utils/helper');
+const adminOnly = require('../middlewares/adminOnly');
 const userCtrls = require('../controllers/userCtrls');
 const validateBody = require('../middlewares/validateBody');
 const { updateUserSchema } = require('../validation/userValidator');
@@ -34,7 +35,7 @@ const uploadAvatar = (req, res, next) => {
 };
 
 // get all users
-router.get('/', verifyToken, userCtrls.getAllUsers);
+router.get('/', verifyToken, adminOnly, userCtrls.getAllUsers);
 
 
 

@@ -1,12 +1,10 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-// const helmet = require('helmet');
-// const morgan = require('morgan');
-// const rateLimit = require('express-rate-limit');
+const { config, trimTrailingSlash } = require('./config/env');
+const { connectDatabase } = require('./config/database');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -18,43 +16,18 @@ const statsRoutes = require('./routes/statsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const policyRoutes = require('./routes/policyRoutes');
-// const { errorHandler } = require('./middleware/errorHandler');
 const uploadImage = require('./utils/uploadImage');
 const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
+const { errorHandler, notFound } = require('./middlewares/errorHandler');
+
 const app = express();
-
-// --- Basic security + logging ---
-// app.use(helmet());
-// app.use(morgan('dev'));
-
-// --- Rate limiter (basic) ---
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // limit each IP to 100 requests per windowMs
-// });
-// app.use(limiter);
 
 // --- Body parsers (must come before routes) ---
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(cookieParser());
 // --- CORS ---
-const configuredClientOrigins = [
-  process.env.CLIENT_URL,
-  process.env.CLIENT_URLS,
-  process.env.CORS_ORIGINS,
-]
-  .filter(Boolean)
-  .flatMap((value) => value.split(','))
-  .map((origin) => origin.trim().replace(/\/+$/g, ''))
-  .filter(Boolean);
-
-const allowedOrigins = new Set([
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  process.env.CLIENT_URL,
-  ...configuredClientOrigins,
-]);
+const allowedOrigins = new Set(config.corsOrigins);
 
 const allowedOriginPatterns = [
   /^https:\/\/e-commerce-project-[a-z0-9-]+\.vercel\.app$/,
@@ -65,7 +38,7 @@ app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
 
-    const normalizedOrigin = origin.replace(/\/+$/g, '');
+    const normalizedOrigin = trimTrailingSlash(origin);
     const isAllowed =
       allowedOrigins.has(normalizedOrigin) ||
       allowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin));
@@ -76,6 +49,34 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+let appInitPromise = null;
+
+const initializeApp = async () => {
+  if (!appInitPromise) {
+    appInitPromise = connectDatabase()
+      .then(async () => {
+        if (config.seedDefaultBlogs) {
+          await seedDefaultBlogs();
+        }
+      })
+      .catch((error) => {
+        appInitPromise = null;
+        throw error;
+      });
+  }
+
+  return appInitPromise;
+};
+
+app.use('/api', async (req, res, next) => {
+  try {
+    await initializeApp();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // --- Routes ---z
 app.use('/api/auth', authRoutes);
@@ -94,32 +95,36 @@ app.get('/', (req, res) => res.send('Wiles and Rues'));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
+    environment: config.nodeEnv,
     dbState: mongoose.connection.readyState,
   });
 });
 
-// --- Error handling middleware (last) ---
-// app.use(errorHandler);
+app.post("/api/upload-image", async (req, res, next) => {
+  // Handle image upload logic here (e.g., save to disk or cloud storage)
+  try {
+    const url = await uploadImage(req.body.image);
+    res.json({ url });
+  } catch (err) {
+    next(err);
+  }
+});
 
-// --- DB connect and start ---
-const PORT = process.env.PORT || 5000;
+app.use(notFound);
+app.use(errorHandler);
+
 async function start() {
   try {
-    await mongoose.connect(process.env.DB_URL, {
-      serverSelectionTimeoutMS: 15000,
-    });
-    console.log('Connected to MongoDB');
-    await seedDefaultBlogs();
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    await initializeApp();
+    app.listen(config.port, () => console.log(`Server running on port ${config.port}`));
   } catch (err) {
     console.error('Failed to start server:', err.message);
     process.exit(1);
   }
 }
-app.post("upload-image", (req, res) => {
-  // Handle image upload logic here (e.g., save to disk or cloud storage)
-  uploadImage(req.body.image)
-    .then((url) => res.json({ url }))
-    .catch((err) => res.status(500).json({ error: 'Image upload failed', details: err.message }));
-});
-start();
+
+if (!config.isVercel) {
+  start();
+}
+
+module.exports = app;

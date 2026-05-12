@@ -1,20 +1,28 @@
 const cloudinary = require("cloudinary").v2;
+const { config, requireEnv } = require("../config/env");
 
-// Validate env variables early
-if (
-  !process.env.CLOUDINARY_CLOUD_NAME ||
-  !process.env.CLOUDINARY_API_KEY ||
-  !process.env.CLOUDINARY_API_SECRET
-) {
-  throw new Error("Missing Cloudinary environment variables");
-}
+let isConfigured = false;
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const configureCloudinary = () => {
+  if (isConfigured) return;
+
+  requireEnv(
+    [
+      ["CLOUDINARY_CLOUD_NAME", config.cloudinary.cloudName],
+      ["CLOUDINARY_API_KEY", config.cloudinary.apiKey],
+      ["CLOUDINARY_API_SECRET", config.cloudinary.apiSecret],
+    ],
+    "Cloudinary upload"
+  );
+
+  cloudinary.config({
+    cloud_name: config.cloudinary.cloudName,
+    api_key: config.cloudinary.apiKey,
+    api_secret: config.cloudinary.apiSecret,
+  });
+
+  isConfigured = true;
+};
 
 // Default upload options
 const DEFAULT_OPTIONS = {
@@ -32,6 +40,8 @@ const DEFAULT_OPTIONS = {
  */
 const uploadToCloudinary = async (file, customOptions = {}) => {
   try {
+    configureCloudinary();
+
     // Input validation
     if (!file) {
       throw new Error("No file provided for upload");
@@ -58,6 +68,8 @@ const uploadToCloudinary = async (file, customOptions = {}) => {
 };
 
 const uploadToCloudinaryResult = async (file, customOptions = {}) => {
+  configureCloudinary();
+
   if (!file) {
     throw new Error("No file provided for upload");
   }
@@ -91,6 +103,8 @@ const getPublicIdFromUrl = (url) => {
 };
 
 const deleteFromCloudinary = async (urlOrPublicId) => {
+  configureCloudinary();
+
   if (typeof urlOrPublicId === "string" && /^https?:\/\//.test(urlOrPublicId)) {
     const publicIdFromUrl = getPublicIdFromUrl(urlOrPublicId);
 

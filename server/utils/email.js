@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { config } = require("../config/env");
 
 const escapeHtml = (value) =>
   String(value)
@@ -9,8 +10,8 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 const getEmailConfig = () => {
-  const user = process.env.GMAIL_USER?.trim();
-  const pass = (process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS || "").replace(/\s/g, "");
+  const user = config.gmailUser?.trim();
+  const pass = (config.gmailAppPassword || "").replace(/\s/g, "");
 
   if (!user || !pass) {
     throw new Error("Gmail email credentials are not configured.");

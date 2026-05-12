@@ -1,12 +1,10 @@
 import React from 'react'
-import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { useGetOrderByIdQuery } from '../../../store/features/orders/orderApi';
 import TimeStep from '../../../components/TimeStep';
 import MessageState from '../../../components/MessageState';
 
 const OrderDetails = () => {
-    const { user } = useSelector((state) => state.auth);
     const { orderId } = useParams();
     const { data: orderDetails, isLoading, isError } = useGetOrderByIdQuery(orderId);
     if(isLoading) {

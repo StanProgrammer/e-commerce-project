@@ -21,8 +21,8 @@ router.post(
   '/create-product',
   verifyToken,
   adminOnly,
-  validateBody(createProductSchema),
   upload.array("images", 5), //max 5 images
+  validateBody(createProductSchema),
   prdCtrls.createProduct
 );
 

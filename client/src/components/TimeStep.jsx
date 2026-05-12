@@ -15,7 +15,7 @@ const TimeStep = ({
   };
 
   const active = isCompleted || isCurrent;
-console.log(orderDetails)
+
   return (
     <div className="relative flex-1 flex flex-col items-center">
       

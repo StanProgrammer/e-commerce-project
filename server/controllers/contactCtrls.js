@@ -1,4 +1,5 @@
 const asyncHandler = require("../middlewares/asyncHandler");
+const { config } = require("../config/env");
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -10,9 +11,9 @@ const escapeHtml = (value = "") =>
 
 const sendContactMessage = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, subject, message } = req.body;
-  const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO_EMAIL || "atibkhan392@outlook.com";
-  const from = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev";
+  const apiKey = config.resendApiKey;
+  const to = config.contactToEmail || "atibkhan392@outlook.com";
+  const from = config.contactFromEmail || "onboarding@resend.dev";
   const name = `${firstName} ${lastName}`.trim();
 
   if (!apiKey) {

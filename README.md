@@ -76,6 +76,14 @@ cd "mern stack project"
 
 ### 2. Install Dependencies
 
+From the repository root:
+
+```bash
+npm run install:all
+```
+
+Or install each app separately:
+
 Install frontend dependencies:
 
 ```bash
@@ -92,15 +100,19 @@ npm install
 
 ### 3. Configure Environment Variables
 
-Create a `.env` file in `server/`:
+Copy `server/.env.example` to `server/.env` and fill in real values:
 
 ```env
+NODE_ENV=development
 DB_URL=your_mongodb_connection_string
 PORT=5000
 JWT_SECRET=your_jwt_secret
 JWT_EXPIRES=7d
 CLIENT_URL=http://localhost:5173
 CLIENT_URLS=http://localhost:5173
+CORS_ORIGINS=
+COOKIE_SECURE=false
+COOKIE_SAME_SITE=lax
 STRIPE_SECRET_KEY=your_stripe_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
@@ -114,7 +126,7 @@ GMAIL_APP_PASSWORD=your_gmail_app_password
 PASSWORD_RESET_CLIENT_URL=http://localhost:5173
 ```
 
-Create a `.env` file in `client/`:
+Copy `client/.env.example` to `client/.env.development` for local development:
 
 ```env
 VITE_API_BACKEND_URL=http://localhost:5000
@@ -136,6 +148,13 @@ Start the frontend in a second terminal:
 ```bash
 cd client
 npm run dev
+```
+
+Or from the repository root:
+
+```bash
+npm run dev:server
+npm run dev:client
 ```
 
 The frontend will usually run at:
@@ -168,6 +187,15 @@ npm run dev      # Start backend with nodemon
 npm start        # Start backend with node
 ```
 
+### Root
+
+```bash
+npm run install:all  # Install client and server dependencies
+npm run build        # Build the client
+npm run lint         # Lint the client
+npm start            # Start the server
+```
+
 ## API Overview
 
 The backend mounts these API route groups:
@@ -187,7 +215,41 @@ The backend mounts these API route groups:
 
 ## Deployment Notes
 
-Both `client/` and `server/` include Vercel configuration files. For deployment, configure the same environment variables in your hosting dashboard and make sure the deployed client URL is allowed by the server CORS settings.
+Both `client/` and `server/` include Vercel configuration files. Configure production environment variables in the hosting dashboard rather than committing `.env` files.
+
+For the deployed server, set:
+
+```text
+NODE_ENV=production
+DB_URL
+JWT_SECRET
+JWT_EXPIRES=7d
+CLIENT_URL=https://your-client-domain
+CLIENT_URLS=https://your-client-domain
+PASSWORD_RESET_CLIENT_URL=https://your-client-domain
+COOKIE_SECURE=true
+COOKIE_SAME_SITE=none
+STRIPE_SECRET_KEY
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+GOOGLE_CLIENT_ID
+RESEND_API_KEY
+CONTACT_TO_EMAIL
+CONTACT_FROM_EMAIL
+GMAIL_USER
+GMAIL_APP_PASSWORD
+```
+
+For the deployed client, set:
+
+```text
+VITE_API_BACKEND_URL=https://your-server-domain
+VITE_STRIPE_PUBLISHABLE_KEY
+VITE_GOOGLE_CLIENT_ID
+```
+
+The server accepts local Vite origins by default and reads additional production origins from `CLIENT_URLS` or `CORS_ORIGINS`. Authentication uses an HTTP-only cookie; deployed client and server domains must be HTTPS, and cross-site deployments require `COOKIE_SAME_SITE=none` with `COOKIE_SECURE=true`.
 
 ## License
 

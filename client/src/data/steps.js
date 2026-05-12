@@ -24,9 +24,3 @@ export const steps = [
     icon: { iconName: 'check-line', activeBg: 'bg-green-600', inactiveText: 'text-green-900' },
   },
 ];
-
-  const iconBgColor = isCompleted || isCurrent ? `bg-${icon.bgColor}` : 'bg-gray-100';
-    const iconTextColor = isCompleted || isCurrent ? 'text-white' : `text-${icon.textColor}`;
-    const connectorColor = isCompleted ? 'bg-blue-500' : 'bg-gray-200';
-    const labelTextColor = isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-500';
-    const descriptionTextColor = isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-500';

@@ -15,6 +15,10 @@ const getAllUsers = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  if (req.user.role !== 'admin' && req.user.sub !== id) {
+    return res.status(403).json({ message: 'You can only update your own profile.' });
+  }
+
   const allowedUpdates = ['username', 'email', 'profilePic', 'bio', 'profession'];
   const updates = {};
 
@@ -42,6 +46,10 @@ const updateUser = asyncHandler(async (req, res) => {
 
 const updateUserProfileWithAvatar = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.role !== 'admin' && req.user.sub !== id) {
+    return res.status(403).json({ message: 'You can only update your own profile.' });
+  }
 
   const user = await User.findById(id);
 

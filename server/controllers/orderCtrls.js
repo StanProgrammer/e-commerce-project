@@ -1,8 +1,22 @@
 const Order = require("../models/orderModel.js");
 const asyncHandler = require("../middlewares/asyncHandler.js");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const createStripeClient = require("stripe");
 const Product = require("../models/prdModel.js");
+const { config, requireEnv } = require("../config/env.js");
+
+let stripeClient = null;
+
+const getStripe = () => {
+  if (!stripeClient) {
+    requireEnv([["STRIPE_SECRET_KEY", config.stripeSecretKey]], "Stripe checkout");
+    stripeClient = createStripeClient(config.stripeSecretKey);
+  }
+
+  return stripeClient;
+};
+
 const createCheckoutSession = asyncHandler(async (req, res) => {
+  const stripe = getStripe();
   const { products,email } = req.body;
   if (!products || !Array.isArray(products) || products.length === 0) {
     return res.status(400).json({ message: "Products are required" });
@@ -47,8 +61,8 @@ lineItems.push({
     mode: "payment",
     customer_email: email,
     line_items: lineItems,
-    success_url: `${process.env.CLIENT_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.CLIENT_URL}/cancel`,
+    success_url: `${config.clientUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.clientUrl}/cancel`,
   });
 
   res.status(200).json({
@@ -61,6 +75,7 @@ lineItems.push({
 
 //confirm payment 
 const confirmPayment = asyncHandler(async (req, res) => {
+  const stripe = getStripe();
   const { sessionId } = req.body;
 
   if (!sessionId) {

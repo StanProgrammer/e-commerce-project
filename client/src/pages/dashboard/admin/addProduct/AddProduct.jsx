@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
 import TextInput from "./TextInput";
 import SelectInput from "./SelectInput";
 import UploadImage from "./UploadImage";
@@ -26,7 +25,6 @@ const colors = [
 ];
 
 const AddProduct = () => {
-  const { user } = useSelector((state) => state.auth);
 const [addProduct] = useAddProductMutation();
   const [product, setProduct] = useState({
     name: "",
