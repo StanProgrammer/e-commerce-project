@@ -54,7 +54,7 @@ const config = {
   contactFromEmail: process.env.CONTACT_FROM_EMAIL,
   gmailUser: process.env.GMAIL_USER,
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS,
-  smtpTimeoutMs: parsePositiveInteger(process.env.SMTP_TIMEOUT_MS, 20000),
+  smtpTimeoutMs: parsePositiveInteger(process.env.SMTP_TIMEOUT_MS, 45000),
   seedDefaultBlogs: process.env.SEED_DEFAULT_BLOGS !== "false",
 };
 

@@ -239,7 +239,10 @@ CONTACT_TO_EMAIL
 CONTACT_FROM_EMAIL
 GMAIL_USER
 GMAIL_APP_PASSWORD
+SMTP_TIMEOUT_MS=45000
 ```
+
+Password reset emails use Nodemailer with Gmail SMTP. `GMAIL_USER` must be the Gmail address and `GMAIL_APP_PASSWORD` must be a 16-character Google app password, not the regular Gmail login password. Set `PASSWORD_RESET_CLIENT_URL` to the deployed client URL so emailed reset links do not point to localhost.
 
 For the deployed client, set:
 

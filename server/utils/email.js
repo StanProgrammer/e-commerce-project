@@ -36,6 +36,42 @@ const createTransporter = () => {
   });
 };
 
+const getPasswordResetMessage = ({ to, resetUrl, username, from }) => {
+  const displayName = username || "there";
+  const safeDisplayName = escapeHtml(displayName);
+  const safeResetUrl = escapeHtml(resetUrl);
+
+  return {
+    from,
+    to,
+    subject: "Reset your Willow & Rue password",
+    text: [
+      `Hi ${displayName},`,
+      "",
+      "We received a request to reset your Willow & Rue password.",
+      "Open this secure link to choose a new password:",
+      resetUrl,
+      "",
+      "This link expires in 15 minutes. If you did not request a reset, you can ignore this email.",
+      "",
+      "Willow & Rue",
+    ].join("\n"),
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+        <h2 style="margin-bottom: 12px;">Reset your password</h2>
+        <p>Hi ${safeDisplayName},</p>
+        <p>We received a request to reset your Willow &amp; Rue password.</p>
+        <p>
+          <a href="${safeResetUrl}" style="display: inline-block; padding: 12px 18px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px;">
+            Choose a new password
+          </a>
+        </p>
+        <p>This link expires in 15 minutes. If you did not request a reset, you can ignore this email.</p>
+      </div>
+    `,
+  };
+};
+
 const sendMailWithTimeout = async (transporter, message) => {
   let timeoutId;
   const timeoutMs = config.smtpTimeoutMs;
@@ -55,40 +91,15 @@ const sendMailWithTimeout = async (transporter, message) => {
 const sendPasswordResetEmail = async ({ to, resetUrl, username }) => {
   const { user } = getEmailConfig();
   const transporter = createTransporter();
-  const displayName = username || "there";
-  const safeDisplayName = escapeHtml(displayName);
-  const safeResetUrl = escapeHtml(resetUrl);
+  const message = getPasswordResetMessage({
+    to,
+    resetUrl,
+    username,
+    from: `"Willow & Rue" <${user}>`,
+  });
 
   try {
-    await sendMailWithTimeout(transporter, {
-      from: `"Willow & Rue" <${user}>`,
-      to,
-      subject: "Reset your Willow & Rue password",
-      text: [
-        `Hi ${displayName},`,
-        "",
-        "We received a request to reset your Willow & Rue password.",
-        "Open this secure link to choose a new password:",
-        resetUrl,
-        "",
-        "This link expires in 15 minutes. If you did not request a reset, you can ignore this email.",
-        "",
-        "Willow & Rue",
-      ].join("\n"),
-      html: `
-        <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
-          <h2 style="margin-bottom: 12px;">Reset your password</h2>
-          <p>Hi ${safeDisplayName},</p>
-          <p>We received a request to reset your Willow &amp; Rue password.</p>
-          <p>
-            <a href="${safeResetUrl}" style="display: inline-block; padding: 12px 18px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px;">
-              Choose a new password
-            </a>
-          </p>
-          <p>This link expires in 15 minutes. If you did not request a reset, you can ignore this email.</p>
-        </div>
-      `,
-    });
+    await sendMailWithTimeout(transporter, message);
   } finally {
     transporter.close();
   }
