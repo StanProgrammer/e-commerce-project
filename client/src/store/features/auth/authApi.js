@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseUrl";
 
 const DEFAULT_API_TIMEOUT_MS = 20000;
-const PASSWORD_RESET_TIMEOUT_MS = 120000;
+const PASSWORD_RESET_TIMEOUT_MS = 30000;
 
 const authApi = createApi({
   reducerPath: "authApi",

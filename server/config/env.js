@@ -6,6 +6,11 @@ const parseCsv = (value = "") =>
     .map((item) => trimTrailingSlash(item))
     .filter(Boolean);
 
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 const nodeEnv = process.env.NODE_ENV || "development";
 const isProduction = nodeEnv === "production";
 
@@ -49,6 +54,7 @@ const config = {
   contactFromEmail: process.env.CONTACT_FROM_EMAIL,
   gmailUser: process.env.GMAIL_USER,
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS,
+  smtpTimeoutMs: parsePositiveInteger(process.env.SMTP_TIMEOUT_MS, 20000),
   seedDefaultBlogs: process.env.SEED_DEFAULT_BLOGS !== "false",
 };
 
