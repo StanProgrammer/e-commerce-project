@@ -13,7 +13,7 @@ const contactHighlights = [
   {
     icon: "ri-phone-line",
     title: "Call Us",
-    detail: "+1 (555) 123-4567",
+    detail: "+91 98765 43210",
     caption: "Monday to Saturday, 9:00 AM to 6:00 PM.",
   },
   {
