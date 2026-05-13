@@ -44,6 +44,14 @@ const forgotPasswordSchema = Joi.object({
     "string.email": "Email must be a valid email address",
     "string.empty": "Email is required",
   }),
+  phone: Joi.string()
+    .trim()
+    .pattern(/^[+()\-\s.\d]{7,20}$/)
+    .required()
+    .messages({
+      "string.empty": "Phone number is required",
+      "string.pattern.base": "Phone number must be valid",
+    }),
 });
 
 const resetPasswordSchema = Joi.object({
