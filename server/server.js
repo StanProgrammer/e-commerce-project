@@ -19,13 +19,12 @@ const policyRoutes = require('./routes/policyRoutes');
 const uploadImage = require('./utils/uploadImage');
 const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
+const { apiLimiter, uploadLimiter } = require('./middlewares/rateLimiter');
 
 const app = express();
 
-// --- Body parsers (must come before routes) ---
-app.use(express.json({ limit: '30mb' }));
-app.use(express.urlencoded({ extended: true, limit: '30mb' }));
-app.use(cookieParser());
+app.set('trust proxy', 1);
+
 // --- CORS ---
 const allowedOrigins = new Set(config.corsOrigins);
 
@@ -49,6 +48,13 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+app.use('/api', apiLimiter);
+
+// --- Body parsers (must come before routes) ---
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+app.use(cookieParser());
 
 let appInitPromise = null;
 
@@ -100,7 +106,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.post("/api/upload-image", async (req, res, next) => {
+app.post("/api/upload-image", uploadLimiter, async (req, res, next) => {
   // Handle image upload logic here (e.g., save to disk or cloud storage)
   try {
     const url = await uploadImage(req.body.image);

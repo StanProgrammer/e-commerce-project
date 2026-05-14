@@ -7,6 +7,7 @@ const adminOnly = require('../middlewares/adminOnly');
 const userCtrls = require('../controllers/userCtrls');
 const validateBody = require('../middlewares/validateBody');
 const { updateUserSchema } = require('../validation/userValidator');
+const { uploadLimiter, writeLimiter } = require('../middlewares/rateLimiter');
 
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
@@ -42,6 +43,7 @@ router.get('/', verifyToken, adminOnly, userCtrls.getAllUsers);
 // update user (profile only)
 router.patch(
   '/:id/profile',
+  uploadLimiter,
   verifyToken,
   uploadAvatar,
   userCtrls.updateUserProfileWithAvatar
@@ -49,6 +51,7 @@ router.patch(
 
 router.patch(
   '/:id',
+  writeLimiter,
   verifyToken,
   validateBody(updateUserSchema),
   userCtrls.updateUser

@@ -6,9 +6,10 @@ const validateParams = require("../middlewares/validateParams");
 const validateQuery = require("../middlewares/validateQuery");
 const { postReviewSchema } = require("../validation/reviewValidator");
 const { verifyToken } = require("../utils/helper");
+const { writeLimiter } = require("../middlewares/rateLimiter");
 
 //post a review
-router.post("/post-review", validateBody(postReviewSchema), verifyToken, reviewCtrls.postReview);
+router.post("/post-review", writeLimiter, validateBody(postReviewSchema), verifyToken, reviewCtrls.postReview);
 
 //total reviews for a product
 router.get("/total-reviews", reviewCtrls.getTotalReviews);

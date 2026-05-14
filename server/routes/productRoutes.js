@@ -16,9 +16,11 @@ const {
 
 const { verifyToken } = require('../utils/helper');
 const adminOnly = require('../middlewares/adminOnly');
+const { uploadLimiter, writeLimiter } = require('../middlewares/rateLimiter');
 
 router.post(
   '/create-product',
+  uploadLimiter,
   verifyToken,
   adminOnly,
   upload.array("images", 5), //max 5 images
@@ -40,6 +42,7 @@ router.get(
 
 router.patch(
   '/update-product/:id',
+  uploadLimiter,
   verifyToken,
   adminOnly,
   validateParams(getProductByIdSchema),
@@ -50,6 +53,7 @@ router.patch(
 
 router.delete(
   '/delete-product/:id',
+  writeLimiter,
   verifyToken,
   adminOnly,
   validateParams(deleteProductSchema),

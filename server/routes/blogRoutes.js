@@ -7,6 +7,7 @@ const validateParams = require("../middlewares/validateParams");
 const validateQuery = require("../middlewares/validateQuery");
 const { verifyToken } = require("../utils/helper");
 const adminOnly = require("../middlewares/adminOnly");
+const { uploadLimiter, writeLimiter } = require("../middlewares/rateLimiter");
 const {
   createBlogSchema,
   updateBlogSchema,
@@ -34,6 +35,7 @@ router.get(
 
 router.post(
   "/create-blog",
+  uploadLimiter,
   verifyToken,
   adminOnly,
   upload.single("image"),
@@ -43,6 +45,7 @@ router.post(
 
 router.patch(
   "/update-blog/:id",
+  uploadLimiter,
   verifyToken,
   adminOnly,
   validateParams(blogIdSchema),
@@ -53,6 +56,7 @@ router.patch(
 
 router.delete(
   "/delete-blog/:id",
+  writeLimiter,
   verifyToken,
   adminOnly,
   validateParams(blogIdSchema),

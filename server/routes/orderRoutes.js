@@ -4,9 +4,10 @@ const Order = require('../models/orderModel');
 const orderCtrls = require('../controllers/orderCtrls');
 const { verifyToken } = require('../utils/helper');
 const adminOnly = require('../middlewares/adminOnly');
+const { checkoutLimiter, writeLimiter } = require('../middlewares/rateLimiter');
 // check out
-router.post('/checkout-session', verifyToken, orderCtrls.createCheckoutSession);
-router.post('/confirm-payment', verifyToken, orderCtrls.confirmPayment);
+router.post('/checkout-session', checkoutLimiter, verifyToken, orderCtrls.createCheckoutSession);
+router.post('/confirm-payment', checkoutLimiter, verifyToken, orderCtrls.confirmPayment);
 
 //get order by email address
 router.get('/:email', verifyToken, orderCtrls.getOrdersByEmail);  
@@ -18,8 +19,8 @@ router.get('/order/:id', verifyToken, orderCtrls.getOrdersById);
 router.get('/', verifyToken,adminOnly, orderCtrls.getAllOrders);
 
 //update order status
-router.patch('/update-order-status/:id', verifyToken,adminOnly,orderCtrls.updateOrderStatus);
+router.patch('/update-order-status/:id', writeLimiter, verifyToken,adminOnly,orderCtrls.updateOrderStatus);
 
 //delete order
-router.delete('/delete/:id', verifyToken,adminOnly, orderCtrls.deleteOrder);
+router.delete('/delete/:id', writeLimiter, verifyToken,adminOnly, orderCtrls.deleteOrder);
 module.exports = router;
