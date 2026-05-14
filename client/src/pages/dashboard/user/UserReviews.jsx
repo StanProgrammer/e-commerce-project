@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useGetReviewsByUserIdQuery } from "../../../store/features/reviews/reviewsApi";
+import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
 import { useNavigate } from "react-router-dom";
 import MessageState from "../../../components/MessageState";
+import ReviewModal from "../../Shop/reviews/ReviewModal";
+import { getProductPrimaryImage } from "../../../utils/productImage";
+
+const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered", "completed"]);
 
 const StarRating = ({ rating }) => {
   return (
@@ -28,21 +33,65 @@ const SkeletonCard = () => (
 const UserReviews = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [selectedReviewProductId, setSelectedReviewProductId] = useState("");
 
   const {
     data: reviews = [],
     isLoading,
     isError,
+    refetch: refetchReviews,
   } = useGetReviewsByUserIdQuery(user?._id, {
     skip: !user?._id,
   });
 
+  const {
+    data: orders = [],
+    isLoading: isOrdersLoading,
+    isError: isOrdersError,
+  } = useGetOrdersByEmailQuery(user?.email ?? "", {
+    skip: !user?.email,
+  });
+
+  const productsById = new Map();
+
+  orders
+    .filter((order) => reviewableOrderStatuses.has(order.status))
+    .flatMap((order) => order.products || [])
+    .forEach((item) => {
+      const product = item.productId;
+      const productId = product?._id || product;
+
+      if (productId && typeof product === "object" && !product.isDeleted) {
+        productsById.set(String(productId), product);
+      }
+    });
+
+  const products = Array.from(productsById.values());
+
+  const getReviewProductId = (review) =>
+    typeof review.productId === "object" ? review.productId?._id : review.productId;
+
+  const getReviewProductLabel = (review) =>
+    review.productName || review.productId?.name || getReviewProductId(review);
+
   const handleReviewClick = (productId) => {
-    navigate(`/product/${productId}`);
+    if (productId) {
+      navigate(`/shop/${productId}`);
+    }
   };
 
   const handleAddReview = () => {
-    navigate("/shop");
+    setIsProductPickerOpen(true);
+  };
+
+  const handleProductSelect = (productId) => {
+    setSelectedReviewProductId(productId);
+    setIsProductPickerOpen(false);
+  };
+
+  const handleCloseReviewModal = () => {
+    setSelectedReviewProductId("");
   };
 
   return (
@@ -78,7 +127,7 @@ const UserReviews = () => {
             reviews.map((review) => (
               <div
                 key={review._id}
-                onClick={() => handleReviewClick(review.productId)}
+                onClick={() => handleReviewClick(getReviewProductId(review))}
                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 p-5 cursor-pointer border border-gray-100 hover:border-gray-200"
               >
                 {/* Rating */}
@@ -100,7 +149,7 @@ const UserReviews = () => {
                     <span className="font-medium text-gray-600">
                       Product:
                     </span>{" "}
-                    {review.productName || review.productId}
+                    {getReviewProductLabel(review)}
                   </p>
                   <p>
                     {new Date(review.createdAt).toLocaleDateString()}
@@ -137,6 +186,69 @@ const UserReviews = () => {
           </div>
         </div>
       )}
+
+      {isProductPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3">
+          <div className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Choose a product to review</h3>
+                <p className="text-sm text-gray-500">Pick the product first, then add your rating and comment.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProductPickerOpen(false)}
+                className="rounded-full p-2 text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                aria-label="Close product picker"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto p-5">
+              {isOrdersLoading ? (
+                <MessageState tone="loading" title="Loading products" message="Finding products you have purchased." />
+              ) : isOrdersError ? (
+                <MessageState tone="error" title="Products could not be loaded" message="Please try again in a moment." />
+              ) : products.length === 0 ? (
+                <MessageState
+                  tone="empty"
+                  title="No purchased products to review"
+                  message="Products will appear here after your paid orders are processed."
+                />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {products.map((product) => (
+                    <button
+                      key={product._id}
+                      type="button"
+                      onClick={() => handleProductSelect(product._id)}
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:border-black hover:shadow-md"
+                    >
+                      <img
+                        src={getProductPrimaryImage(product)}
+                        alt={product.name || "Product"}
+                        className="h-40 w-full object-cover"
+                      />
+                      <div className="p-4">
+                        <p className="line-clamp-2 font-semibold text-gray-900">{product.name}</p>
+                        <p className="mt-1 text-sm text-gray-500">${product.price}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ReviewModal
+        isOpen={Boolean(selectedReviewProductId)}
+        productId={selectedReviewProductId}
+        onClose={handleCloseReviewModal}
+        onSubmitted={refetchReviews}
+      />
     </div>
   );
 };

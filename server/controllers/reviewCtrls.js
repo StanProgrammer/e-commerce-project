@@ -1,10 +1,41 @@
 const Review = require("../models/reviewModel.js");
 const asyncHandler = require("../middlewares/asyncHandler.js");
 const Product = require("../models/prdModel.js");
+const Order = require("../models/orderModel.js");
+const User = require("../models/userModel.js");
 const { default: mongoose } = require("mongoose");
+
+const reviewableOrderStatuses = ["processing", "shipped", "delivered", "completed"];
+
 const postReview = asyncHandler(async (req, res) => {
   const { comment, rating, productId } = req.body;
   const userId = req.user.sub;
+
+  const [user, product] = await Promise.all([
+    User.findById(userId).select("email"),
+    Product.findOne({ _id: productId, isDeleted: false }).select("_id"),
+  ]);
+
+  if (!user) {
+    return res.status(401).json({ message: "You need to login to do this action." });
+  }
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  const purchasedOrder = await Order.findOne({
+    email: user.email,
+    isDeleted: false,
+    status: { $in: reviewableOrderStatuses },
+    "products.productId": productId,
+  }).select("_id");
+
+  if (!purchasedOrder) {
+    return res.status(403).json({
+      message: "You can only review products you have purchased.",
+    });
+  }
 
   const existingReview = await Review.findOne({ productId, userId });
 

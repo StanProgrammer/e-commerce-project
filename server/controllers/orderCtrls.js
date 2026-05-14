@@ -133,13 +133,15 @@ const confirmPayment = asyncHandler(async (req, res) => {
 //get orders by email address
 const getOrdersByEmail = asyncHandler(async (req, res) => {
   const { email } = req.params;
-  const orders = await Order.find({ email }).sort({ createdAt: -1 });
+  const orders = await Order.find({ email })
+    .populate("products.productId", "name price images isDeleted")
+    .sort({ createdAt: -1 });
   res.status(200).json(orders);
 });
 
 const getOrdersById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const order = await Order.findById(id);
+  const order = await Order.findById(id).populate("products.productId", "name price images isDeleted");
   if (!order) {
     return res.status(404).json({ message: "Order not found" });
   }

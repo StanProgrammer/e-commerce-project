@@ -6,8 +6,9 @@ import toast from "react-hot-toast";
 import getApiErrorMessage from "../../../utils/getApiErrorMessage";
 import { useGetSingleProductQuery } from "../../../store/features/products/productsApi";
 
-const ReviewModal = ({ isOpen, onClose }) => {
-  const { id: productId } = useParams();
+const ReviewModal = ({ isOpen, onClose, productId: selectedProductId, onSubmitted }) => {
+  const { id: routeProductId } = useParams();
+  const productId = selectedProductId || routeProductId;
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -39,6 +40,7 @@ const ReviewModal = ({ isOpen, onClose }) => {
       setComment("");
       setRating(0);
       onClose();
+      onSubmitted?.();
       refetch();
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Review could not be submitted. Please try again."));

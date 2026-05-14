@@ -1,11 +1,30 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import reviewAvatar from "../../../assets/avatar.png";
 import Ratings from "../../../components/Ratings";
 import ReviewModal from "./ReviewModal";
+import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
+
+const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered", "completed"]);
 
 const ReviewCard = ({ productReviews = [] }) => {
+  const { id: productId } = useParams();
+  const { user } = useSelector((state) => state.auth);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data: orders = [] } = useGetOrdersByEmailQuery(user?.email ?? "", {
+    skip: !user?.email,
+  });
+
+  const hasPurchasedProduct = orders.some(
+    (order) =>
+      reviewableOrderStatuses.has(order.status) &&
+      (order.products || []).some((item) => String(item.productId?._id || item.productId) === String(productId))
+  );
+
   const openReviewModal = () => {
+    if (!hasPurchasedProduct) return;
     setIsModalOpen(true);
   };
 
@@ -35,10 +54,12 @@ const ReviewCard = ({ productReviews = [] }) => {
           </div>
 
           <button
-            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-medium text-white transition hover:bg-primary-dark md:w-auto cursor-pointer"
+            type="button"
+            disabled={!hasPurchasedProduct}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-medium text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 md:w-auto cursor-pointer"
             onClick={openReviewModal}
           >
-            Add Your Review
+            {hasPurchasedProduct ? "Add Your Review" : "Purchase to Review"}
           </button>
         </div>
       </div>
