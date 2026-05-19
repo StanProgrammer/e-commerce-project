@@ -10,10 +10,10 @@ const filters = {
   categories: ["all", "accessories", "clothes", "jewellery", "cosmetics"],
   colors: ["all", "red", "blue", "green", "black", "gold", "silver", "beige"],
   priceRange: [
-    { label: "Under $50", min: 0, max: 50 },
-    { label: "$50 to $100", min: 50, max: 100 },
-    { label: "$100 to $200", min: 100, max: 200 },
-    { label: "Over $200", min: 200, max: Infinity },
+    { label: "Under $50", value: "0-50", min: 0, max: 50 },
+    { label: "$50 to $100", value: "50-100", min: 50, max: 100 },
+    { label: "$100 to $200", value: "100-200", min: 100, max: 200 },
+    { label: "Over $200", value: "200-", min: 200, max: undefined },
   ],
 };
 
@@ -58,7 +58,16 @@ const ShopPage = () => {
   /* ---------------- PRICE PARSING ---------------- */
   const [minPrice, maxPrice] = useMemo(() => {
     if (!priceRange) return [undefined, undefined];
-    const [min, max] = priceRange.split("-").map(Number);
+
+    const matchingRange = filters.priceRange.find((range) => range.label === priceRange);
+    if (matchingRange) {
+      return [matchingRange.min, matchingRange.max];
+    }
+
+    const [minValue, maxValue] = priceRange.split("-");
+    const min = minValue === "" ? undefined : Number(minValue);
+    const max = maxValue === "" ? undefined : Number(maxValue);
+
     return [Number.isNaN(min) ? undefined : min, Number.isNaN(max) ? undefined : max];
   }, [priceRange]);
 
@@ -98,7 +107,7 @@ const ShopPage = () => {
 
       {/* CONTENT */}
       <section className="section__container">
-        <div className="flex flex-col md:flex-row md:gap-12 gap-8">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
           {/* FILTERS */}
           <ShopFilters
             filteredProducts={filtersState}
@@ -116,8 +125,25 @@ const ShopPage = () => {
           />
 
           {/* PRODUCTS */}
-          <div className="flex-1">
-            <h3 className="text-2xl font-medium mb-4">Products Available: {data?.totalProducts ?? 0}</h3>
+          <div className="min-w-0 flex-1">
+            <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">Collection</p>
+                <h3 className="mt-1 text-2xl font-semibold text-slate-950">
+                  Products Available: {data?.totalProducts ?? 0}
+                </h3>
+              </div>
+              {(category !== "all" || color !== "all" || priceRange) && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-primary hover:text-primary"
+                >
+                  <i className="ri-close-circle-line text-base" aria-hidden="true" />
+                  Reset filters
+                </button>
+              )}
+            </div>
 
             {isLoading || isFetching ? (
               <MessageState tone="loading" title="Loading products" message="We are finding products that match your filters." />
