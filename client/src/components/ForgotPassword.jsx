@@ -18,26 +18,11 @@ const getEmailError = (email) => {
   return "";
 };
 
-const getPhoneError = (phone) => {
-  const value = phone.trim();
-
-  if (!value) {
-    return "Phone number is required.";
-  }
-
-  if (!/^[+()\-\s.\d]{7,20}$/.test(value)) {
-    return "Enter a valid phone number.";
-  }
-
-  return "";
-};
-
 export default function ForgotPassword() {
-  const [form, setForm] = useState({ email: "", phone: "" });
+  const [form, setForm] = useState({ email: "" });
   const [errors, setErrors] = useState({});
   const [isSent, setIsSent] = useState(false);
   const emailRef = useRef(null);
-  const phoneRef = useRef(null);
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const updateField = (field, value) => {
@@ -50,7 +35,6 @@ export default function ForgotPassword() {
 
     const nextErrors = {
       email: getEmailError(form.email),
-      phone: getPhoneError(form.phone),
     };
     const hasErrors = Object.values(nextErrors).some(Boolean);
     setErrors(nextErrors);
@@ -58,8 +42,6 @@ export default function ForgotPassword() {
     if (hasErrors) {
       if (nextErrors.email) {
         emailRef.current?.focus();
-      } else {
-        phoneRef.current?.focus();
       }
       return;
     }
@@ -67,12 +49,11 @@ export default function ForgotPassword() {
     try {
       const response = await forgotPassword({
         email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
       }).unwrap();
       setIsSent(true);
-      toast.success(response.message || "Support has been notified.");
+      toast.success(response.message || "If an account exists, a reset link has been sent.");
     } catch (err) {
-      toast.error(getApiErrorMessage(err, "We could not notify support right now. Please try again."));
+      toast.error(getApiErrorMessage(err, "We could not send a reset email right now. Please try again."));
     }
   };
 
@@ -100,13 +81,13 @@ export default function ForgotPassword() {
               Need help signing in?
             </h1>
             <p className="mt-5 max-w-lg text-sm leading-7 text-white/80 sm:text-base">
-              Share your account email and phone number, and our support team will help you recover access.
+              Enter your account email and we will send a secure password reset link if the account exists.
             </p>
           </motion.div>
 
           <div className="relative flex flex-wrap gap-3 text-sm text-white/70">
-            <span className="rounded-full border border-white/15 px-4 py-2">Support notified</span>
-            <span className="rounded-full border border-white/15 px-4 py-2">Private request</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">15-minute link</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">Private reset</span>
           </div>
         </div>
 
@@ -123,13 +104,13 @@ export default function ForgotPassword() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Forgot Password</p>
               <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">Request assistance</h2>
               <p className="mt-2 text-sm leading-7 text-slate-500 sm:text-base">
-                Send your details to Willow & Rue support. They will contact you shortly to help with your account.
+                We will email a one-time reset link if this address belongs to an active account.
               </p>
             </div>
 
             {isSent && (
               <div className="mb-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm leading-6 text-green-800">
-                Your request has been sent. Our support team has been notified and will contact you shortly.
+                If an account exists for that email, a password reset link has been sent.
               </div>
             )}
 
@@ -156,37 +137,14 @@ export default function ForgotPassword() {
               )}
             </label>
 
-            <label className="mt-5 block">
-              <span className="mb-2 block text-sm font-medium text-slate-700">Phone number</span>
-              <input
-                ref={phoneRef}
-                id="forgot-phone"
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={(event) => updateField("phone", event.target.value)}
-                placeholder="+1 555 123 4567"
-                className={`w-full rounded-xl border px-4 py-3 text-slate-900 outline-none transition focus:border-primary ${
-                  errors.phone ? "border-red-400 bg-red-50" : "border-slate-300 bg-white"
-                }`}
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? "forgot-phone-error" : undefined}
-              />
-              {errors.phone && (
-                <p id="forgot-phone-error" className="mt-2 text-xs text-red-600">
-                  {errors.phone}
-                </p>
-              )}
-            </label>
-
             <div className="mt-6 space-y-3">
               <button
                 type="submit"
                 disabled={isLoading}
                 className="btn inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isLoading ? <i className="ri-loader-4-line animate-spin"></i> : <i className="ri-customer-service-2-line"></i>}
-                {isLoading ? "Notifying support..." : "Notify support"}
+                {isLoading ? <i className="ri-loader-4-line animate-spin"></i> : <i className="ri-mail-send-line"></i>}
+                {isLoading ? "Sending reset link..." : "Send reset link"}
               </button>
 
               <Link

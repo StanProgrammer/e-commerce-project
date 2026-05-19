@@ -41,7 +41,22 @@ const updateUserRole = asyncHandler(async (req, res) => {
 const deleteUser = asyncHandler(async (req, res) => {
   
     const userId = req.params.id;
-    const user = await User.findByIdAndUpdate(userId, { isDeleted: true }, { new: true });
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Invalid user id.' });
+    }
+
+    if (req.user.sub === userId) {
+      return res.status(400).json({
+        message: 'You cannot delete your own account from admin management.',
+      });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { _id: userId, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    );
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }

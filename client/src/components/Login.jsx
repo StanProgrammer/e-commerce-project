@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "motion/react";
 import { useGoogleLoginUserMutation, useLoginUserMutation } from "../store/features/auth/authApi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { setUser } from "../store/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
@@ -36,7 +36,9 @@ export default function LoginPage() {
   const [loginUser, { isLoading, error }] = useLoginUserMutation();
   const [googleLoginUser, { isLoading: isGoogleLoading }] = useGoogleLoginUserMutation();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
+  const redirectTo = location.state?.from?.pathname || "/";
 
   useEffect(() => {
     if (!googleClientId || !googleButtonRef.current) {
@@ -59,7 +61,7 @@ export default function LoginPage() {
             const res = await googleLoginUser({ credential: response.credential }).unwrap();
             dispatch(setUser(res.user));
             toast.success("Signed in with Google.");
-            navigate("/");
+            navigate(redirectTo, { replace: true });
           } catch (googleError) {
             toast.error(getApiErrorMessage(googleError, "Google sign-in failed. Please try again or use email and password."));
           }
@@ -105,7 +107,7 @@ export default function LoginPage() {
     return () => {
       cancelled = true;
     };
-  }, [dispatch, googleClientId, googleLoginUser, navigate]);
+  }, [dispatch, googleClientId, googleLoginUser, navigate, redirectTo]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -134,7 +136,7 @@ export default function LoginPage() {
 
       dispatch(setUser(res.user));
       toast.success("You are signed in.");
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Sign in failed. Check your email and password, then try again."));
     }

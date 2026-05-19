@@ -3,8 +3,10 @@ const asyncHandler = require("../middlewares/asyncHandler.js");
 const createStripeClient = require("stripe");
 const Product = require("../models/prdModel.js");
 const { config, requireEnv } = require("../config/env.js");
+const mongoose = require("mongoose");
 
 let stripeClient = null;
+const ORDER_STATUSES = new Set(["pending", "processing", "shipped", "delivered", "canceled"]);
 
 const getStripe = () => {
   if (!stripeClient) {
@@ -15,9 +17,16 @@ const getStripe = () => {
   return stripeClient;
 };
 
+const getCheckoutClientUrl = (req) => {
+  const origin = req.get("origin");
+  return String(origin || config.clientUrl).replace(/\/+$/g, "");
+};
+
 const createCheckoutSession = asyncHandler(async (req, res) => {
   const stripe = getStripe();
-  const { products,email } = req.body;
+  const { products } = req.body;
+  const email = req.user.email;
+  const checkoutClientUrl = getCheckoutClientUrl(req);
   if (!products || !Array.isArray(products) || products.length === 0) {
     return res.status(400).json({ message: "Products are required" });
   }
@@ -61,8 +70,8 @@ lineItems.push({
     mode: "payment",
     customer_email: email,
     line_items: lineItems,
-    success_url: `${config.clientUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${config.clientUrl}/cancel`,
+    success_url: `${checkoutClientUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${checkoutClientUrl}/shop`,
   });
 
   res.status(200).json({
@@ -85,6 +94,11 @@ const confirmPayment = asyncHandler(async (req, res) => {
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ["line_items.data.price.product", "payment_intent"],
   });
+  const sessionEmail = session.customer_details?.email || session.customer_email;
+
+  if (req.user && req.user.role !== "admin" && sessionEmail !== req.user.email) {
+    return res.status(403).json({ message: "You can only confirm your own checkout session." });
+  }
 
   const paymentIntentId = session.payment_intent.id;
 
@@ -133,7 +147,12 @@ const confirmPayment = asyncHandler(async (req, res) => {
 //get orders by email address
 const getOrdersByEmail = asyncHandler(async (req, res) => {
   const { email } = req.params;
-  const orders = await Order.find({ email })
+
+  if (req.user.role !== "admin" && email !== req.user.email) {
+    return res.status(403).json({ message: "You can only view your own orders." });
+  }
+
+  const orders = await Order.find({ email, isDeleted: false })
     .populate("products.productId", "name price images isDeleted")
     .sort({ createdAt: -1 });
   res.status(200).json(orders);
@@ -141,15 +160,26 @@ const getOrdersByEmail = asyncHandler(async (req, res) => {
 
 const getOrdersById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const order = await Order.findById(id).populate("products.productId", "name price images isDeleted");
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid order id" });
+  }
+
+  const order = await Order.findOne({ _id: id, isDeleted: false })
+    .populate("products.productId", "name price images isDeleted");
   if (!order) {
     return res.status(404).json({ message: "Order not found" });
   }
+
+  if (req.user.role !== "admin" && order.email !== req.user.email) {
+    return res.status(403).json({ message: "You can only view your own orders." });
+  }
+
   res.status(200).json(order);
 });
 
 const getAllOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find().sort({ createdAt: -1 });
+  const orders = await Order.find({ isDeleted: false }).sort({ createdAt: -1 });
   if (!orders || orders.length === 0) {
     return res.status(404).json({ message: "No orders found" });
   }
@@ -161,8 +191,16 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid order id" });
+  }
+
   if (!status) {
     return res.status(400).json({ message: "Status is required" });
+  }
+
+  if (!ORDER_STATUSES.has(status)) {
+    return res.status(400).json({ message: "Invalid order status" });
   }
 
   const order = await Order.findById(id);
@@ -192,6 +230,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
 const deleteOrder = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid order id" });
+  }
 
   const order = await Order.findById(id);
 

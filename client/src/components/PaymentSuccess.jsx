@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
 import { clearCart } from "../store/features/cart/cartSlice";
 import getBaseUrl from "../utils/baseUrl";
 import TimeStep from "./TimeStep";
 import MessageState from "./MessageState";
+
+const PAYMENT_CONFIRMATION_TIMEOUT_MS = 45000;
 
 const PaymentSuccess = () => {
   const [orderDetails, setOrderDetails] = useState(null);
@@ -18,21 +21,28 @@ const PaymentSuccess = () => {
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, PAYMENT_CONFIRMATION_TIMEOUT_MS);
+
     if (sessionId) {
       fetch(`${getBaseUrl()}/api/orders/confirm-payment`, {
         method: "POST",
         credentials: "include",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ sessionId })
 
       })
-        .then((response) => {
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}));
           if (!response.ok) {
-            throw new Error("Payment confirmation failed.");
+            throw new Error(data?.message || "Payment confirmation failed.");
           }
-          return response.json();
+          return data;
         })
         .then((data) => {
           if (!data?.order) {
@@ -45,19 +55,48 @@ const PaymentSuccess = () => {
         })
         .catch((error) => {
           console.error("Error fetching order details:", error);
-          setStatusMessage("Payment was received, but we could not load the order details. Check your orders page for the latest status.");
+          const message =
+            error.name === "AbortError"
+              ? "The payment provider took too long to respond. Your payment may still be processing. Check your orders page in a moment."
+              : error.message || "Payment was received, but we could not load the order details. Check your orders page for the latest status.";
+          setStatusMessage(message);
+        })
+        .finally(() => {
+          clearTimeout(timeoutId);
         });
     }
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [dispatch]);
   if (statusMessage) {
-    return <MessageState tone="error" title="Order confirmation needs attention" message={statusMessage} className="section__container" />;
+    return (
+      <MessageState
+        tone="error"
+        title="Order confirmation needs attention"
+        message={statusMessage}
+        className="section__container"
+        action={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link to="/dashboard/orders" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark">
+              View orders
+            </Link>
+            <Link to="/shop" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-primary hover:text-primary">
+              Continue shopping
+            </Link>
+          </div>
+        }
+      />
+    );
   }
 
   if (!orderDetails) {
     return <MessageState tone="loading" title="Confirming your payment" message="Please wait while we verify your payment and prepare your order details." className="section__container" />;
   }
   const isCompleted = (status) => {
-    const statusMap = ["pending", "processing", "shipped", "completed"];
+    const statusMap = ["pending", "processing", "shipped", "delivered"];
     return statusMap.indexOf(status) < statusMap.indexOf(orderDetails.status);
   };
 const isCurrent = (status) => orderDetails.status === status;
@@ -81,9 +120,9 @@ const isCurrent = (status) => orderDetails.status === status;
       icon: { iconName: "truck-line", bgColor: "blue-800", textColor: "blue-800" },
     },
     {
-      status: "completed",
-      label: "Completed",
-      description: "Your order has been successfully completed.",
+      status: "delivered",
+      label: "Delivered",
+      description: "Your order has been delivered successfully.",
       icon: { iconName: "check-line", bgColor: "green-800", textColor: "green-900" },
     },
   ];

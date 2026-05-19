@@ -85,6 +85,14 @@ const getUserReviews = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "User ID is required" });
   }
 
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  if (req.user.role !== "admin" && req.user.sub !== String(userId)) {
+    return res.status(403).json({ message: "You can only view your own reviews." });
+  }
+
   const reviews = await Review.find({ userId }).sort({ createdAt: -1 });
 
   // Always return 200

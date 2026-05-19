@@ -13,7 +13,11 @@ const getUserStats = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Email is required" });
   }
 
-  const user = await User.findOne({ email });
+  if (req.user.role !== "admin" && email !== req.user.email) {
+    return res.status(403).json({ message: "You can only view your own stats." });
+  }
+
+  const user = await User.findOne({ email, isDeleted: false });
 
   if (!user) {
     return res.status(404).json({ error: "User not found" });
@@ -53,9 +57,9 @@ const getUserStats = asyncHandler(async (req, res) => {
 const getAdminStats = asyncHandler(async (req, res) => {
   const [totalUsers, totalOrders, totalProducts, totalReviews] =
     await Promise.all([
-      User.countDocuments(),
+      User.countDocuments({ isDeleted: false }),
       Order.countDocuments({ isDeleted: false }),
-      Product.countDocuments(),
+      Product.countDocuments({ isDeleted: false }),
       Review.countDocuments(),
     ]);
 

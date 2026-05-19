@@ -5,10 +5,12 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { clearCookieOptions, cookieOptions, generateToken } = require('../utils/helper');
 const { config } = require('../config/env');
+const { sendPasswordResetEmail } = require('../utils/email');
 
-const PASSWORD_SUPPORT_RESPONSE = "Your request has been sent. Our support team will contact you shortly.";
+const PASSWORD_RESET_RESPONSE = "If an account exists for that email, a password reset link has been sent.";
 
 const buildUserResponse = (user) => ({
+  _id: user._id,
   id: user._id,
   username: user.username,
   email: user.email,
@@ -34,72 +36,9 @@ const buildUniqueUsername = async (baseName) => {
   return username;
 };
 
-const escapeHtml = (value = "") =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
-const sendPasswordSupportEmail = async ({ email, phone }) => {
-  const apiKey = config.resendApiKey;
-  const to = config.contactToEmail || "atibkhan392@outlook.com";
-  const from = config.contactFromEmail || "onboarding@resend.dev";
-
-  if (!apiKey) {
-    const error = new Error("Email service is not configured yet.");
-    error.responseCode = 500;
-    throw error;
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
-      <h2 style="margin-bottom: 16px;">Password assistance request</h2>
-      <p>A customer requested help recovering access to their account.</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-      <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-    </div>
-  `;
-
-  const text = [
-    "Password assistance request",
-    "",
-    "A customer requested help recovering access to their account.",
-    `Email: ${email}`,
-    `Phone: ${phone}`,
-  ].join("\n");
-
-  const resendResponse = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      reply_to: email,
-      subject: "Password assistance request",
-      html,
-      text,
-    }),
-  });
-
-  const result = await resendResponse.json().catch(() => ({}));
-
-  if (!resendResponse.ok) {
-    const error = new Error(result?.message || "Failed to notify support team.");
-    error.responseCode = resendResponse.status;
-    error.response = result;
-    throw error;
-  }
-
-  return result;
-};
 const register = asyncHandler(async (req, res) => {
   // after validateBody, req.body contains sanitized fields only
-  const { username, email, password, role = 'user', profilePic = '' } = req.body;
+  const { username, email, password, profilePic = '' } = req.body;
 
   // check duplicates (username OR email)
   const existing = await User.findOne({
@@ -125,7 +64,7 @@ const register = asyncHandler(async (req, res) => {
     username,
     email,
     password: hashed,
-    role,
+    role: 'user',
     profilePic,
   });
 
@@ -181,7 +120,6 @@ const googleLogin = asyncHandler(async (req, res) => {
   if (!googleRes.ok) {
     return res.status(401).json({
       message: "Invalid Google credential.",
-      details: googleData,
     });
   }
 
@@ -258,21 +196,37 @@ const googleLogin = asyncHandler(async (req, res) => {
 const hashResetToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const { email, phone } = req.body;
+  const { email } = req.body;
+  const user = await User.findOne({ email, isDeleted: false });
+
+  if (!user) {
+    return res.status(200).json({ message: PASSWORD_RESET_RESPONSE });
+  }
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  user.passwordResetToken = hashResetToken(resetToken);
+  user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = `${config.passwordResetClientUrl}/reset-password/${resetToken}`;
 
   try {
-    await sendPasswordSupportEmail({ email, phone });
-
-    return res.status(200).json({ message: PASSWORD_SUPPORT_RESPONSE });
-  } catch (err) {
-    console.error("Password assistance email failed:", {
-      responseCode: err.responseCode,
-      response: err.response,
-      message: err.message,
+    await sendPasswordResetEmail({
+      to: user.email,
+      resetUrl,
+      username: user.username,
     });
 
+    return res.status(200).json({ message: PASSWORD_RESET_RESPONSE });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    console.error("Password reset email failed:", err.message);
+
     return res.status(err.responseCode || 500).json({
-      message: "We could not notify support right now. Please try again later.",
+      message: "We could not send a reset email right now. Please try again later.",
     });
   }
 });
@@ -293,6 +247,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(password, salt);
+  user.passwordChangedAt = new Date();
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
@@ -315,9 +270,11 @@ const verifyMe = asyncHandler(async (req, res) => {
     });
   }
 
-  const user = await User.findById(req.user.sub).select("-password");
+  const user = await User.findOne({ _id: req.user.sub, isDeleted: false })
+    .select("_id username email role profilePic")
+    .lean();
 
-  if (!user || user.isDeleted) {
+  if (!user) {
     return res.status(200).json({
       isAuthenticated: false,
       user: null,
@@ -326,7 +283,7 @@ const verifyMe = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     isAuthenticated: true,
-    user,
+    user: buildUserResponse(user),
   });
 });
 

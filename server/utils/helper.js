@@ -1,11 +1,14 @@
 const jwt = require("jsonwebtoken");
 const { config, requireEnv } = require("../config/env");
+const User = require("../models/userModel");
 
 const buildCookieOptions = () => {
+  const sameSite = String(config.cookie.sameSite || "lax").toLowerCase();
+  const secure = config.cookie.secure || sameSite === "none";
   const options = {
     httpOnly: true,
-    secure: config.cookie.secure,
-    sameSite: config.cookie.sameSite,
+    secure,
+    sameSite,
     maxAge: 1000 * 60 * 60 * 24 * 7,
   };
 
@@ -29,9 +32,7 @@ const generateToken = (user) => {
   requireEnv([["JWT_SECRET", config.jwtSecret]], "authentication");
 
   const payload = {
-    sub: user._id,
-    username: user.username,
-    role: user.role,
+    sub: user._id.toString(),
   };
 
   return jwt.sign(payload, config.jwtSecret, {
@@ -52,7 +53,38 @@ const decodeToken = (token) => {
   return jwt.verify(token, config.jwtSecret);
 };
 
-const verifyToken = (req, res, next) => {
+const buildAuthUser = (user) => ({
+  sub: user._id.toString(),
+  _id: user._id.toString(),
+  username: user.username,
+  email: user.email,
+  role: user.role,
+  profilePic: user.profilePic,
+});
+
+const getActiveUserFromToken = async (token) => {
+  const decoded = decodeToken(token);
+
+  if (!decoded?.sub) {
+    return null;
+  }
+
+  const user = await User.findOne({ _id: decoded.sub, isDeleted: false })
+    .select("_id username email role profilePic passwordChangedAt")
+    .lean();
+
+  if (
+    user?.passwordChangedAt &&
+    decoded.iat &&
+    user.passwordChangedAt.getTime() > decoded.iat * 1000
+  ) {
+    return null;
+  }
+
+  return user ? buildAuthUser(user) : null;
+};
+
+const verifyToken = async (req, res, next) => {
   const token = getRequestToken(req);
 
   if (!token) {
@@ -60,14 +92,20 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    req.user = decodeToken(token);
-    next();
+    const user = await getActiveUserFromToken(token);
+
+    if (!user) {
+      return res.status(401).json({ message: "Session expired" });
+    }
+
+    req.user = user;
+    return next();
   } catch (err) {
     return res.status(401).json({ message: "Session expired" });
   }
 };
 
-const optionalVerifyToken = (req, res, next) => {
+const optionalVerifyToken = async (req, res, next) => {
   const token = getRequestToken(req);
 
   if (!token) {
@@ -76,7 +114,7 @@ const optionalVerifyToken = (req, res, next) => {
   }
 
   try {
-    req.user = decodeToken(token);
+    req.user = await getActiveUserFromToken(token);
   } catch (err) {
     req.user = null;
   }

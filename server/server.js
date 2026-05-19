@@ -21,6 +21,8 @@ const uploadImage = require('./utils/uploadImage');
 const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
 const { apiLimiter, uploadLimiter } = require('./middlewares/rateLimiter');
+const { verifyToken } = require('./utils/helper');
+const adminOnly = require('./middlewares/adminOnly');
 
 const app = express();
 
@@ -49,6 +51,42 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+const isTrustedOrigin = (origin) => {
+  if (!origin) return true;
+
+  const normalizedOrigin = trimTrailingSlash(origin);
+  return (
+    allowedOrigins.has(normalizedOrigin) ||
+    allowedOriginPatterns.some((pattern) => pattern.test(normalizedOrigin))
+  );
+};
+
+app.use('/api', (req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    return next();
+  }
+
+  const requestOrigin = req.get("origin");
+  const referer = req.get("referer");
+
+  if (requestOrigin && !isTrustedOrigin(requestOrigin)) {
+    return res.status(403).json({ message: "Request origin is not allowed." });
+  }
+
+  if (!requestOrigin && referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (!isTrustedOrigin(refererOrigin)) {
+        return res.status(403).json({ message: "Request origin is not allowed." });
+      }
+    } catch {
+      return res.status(403).json({ message: "Request origin is not allowed." });
+    }
+  }
+
+  return next();
+});
 
 app.use('/api', apiLimiter);
 
@@ -108,7 +146,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.post("/api/upload-image", uploadLimiter, async (req, res, next) => {
+app.post("/api/upload-image", uploadLimiter, verifyToken, adminOnly, async (req, res, next) => {
   // Handle image upload logic here (e.g., save to disk or cloud storage)
   try {
     const url = await uploadImage(req.body.image);

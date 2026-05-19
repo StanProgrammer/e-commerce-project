@@ -1,11 +1,52 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useLocation } from 'react-router-dom';
+import { logout, markAuthChecked, setUser } from '../store/features/auth/authSlice';
+import getBaseUrl from '../utils/baseUrl';
 
 const Privateroutes = ({children,role}) => {
-    const { user } = useSelector((state) => state.auth);
+    const { user, authChecked } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
     const location = useLocation();
+    const [isVerifyingSession, setIsVerifyingSession] = useState(true);
+
+    useEffect(() => {
+      let cancelled = false;
+
+      const verifySession = async () => {
+        try {
+          const response = await fetch(`${getBaseUrl()}/api/auth/me`, {
+            credentials: "include",
+          });
+          const data = await response.json().catch(() => ({}));
+
+          if (cancelled) return;
+
+          if (response.ok && data.isAuthenticated && data.user) {
+            dispatch(setUser(data.user));
+          } else if (user) {
+            dispatch(logout());
+          } else {
+            dispatch(markAuthChecked());
+          }
+        } catch {
+          if (!cancelled) {
+            dispatch(user ? logout() : markAuthChecked());
+          }
+        } finally {
+          if (!cancelled) {
+            setIsVerifyingSession(false);
+          }
+        }
+      };
+
+      verifySession();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [dispatch]);
 
     useEffect(() => {
       if (user && role && user.role !== role && user.role !== "admin") {
@@ -14,6 +55,14 @@ const Privateroutes = ({children,role}) => {
         });
       }
     }, [role, user]);
+
+    if (!authChecked || isVerifyingSession) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-medium text-slate-500">
+          Checking your session...
+        </div>
+      );
+    }
 
     if (!user) {
       return <Navigate to="/login" state={{ from: location }} replace />;

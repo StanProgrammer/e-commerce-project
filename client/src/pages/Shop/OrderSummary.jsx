@@ -14,28 +14,33 @@ const OrderSummary = () => {
 
   //payment integration
 const handleCheckout = async () => {
-  setRedirecting(true);
-  
-  const response = await fetch(
-    `${getBaseUrl()}/api/orders/checkout-session`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        products,
-        userId: user?._id,
-        email: user?.email,
-      }),
+  try {
+    setRedirecting(true);
+    
+    const response = await fetch(
+      `${getBaseUrl()}/api/orders/checkout-session`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          products,
+        }),
+      }
+    );
+
+    const session = await response.json().catch(() => ({}));
+
+    if (!response.ok || !session?.url) {
+      throw new Error(session?.message || "Stripe checkout could not be started.");
     }
-  );
 
-  const session = await response.json();
-  if (!session?.url) {
-  throw new Error("Stripe URL missing");
-}
-
-window.location.href = session.url;
+    window.location.href = session.url;
+  } catch (error) {
+    console.error("Checkout failed:", error);
+    alert(error.message || "Checkout could not be started. Please try again.");
+    setRedirecting(false);
+  }
 };
 
 

@@ -23,9 +23,9 @@ const registerSchema = Joi.object({
       'string.empty': 'Password is required',
       'string.pattern.base': 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character'
     }),
-  // optional client-sent fields (will be stripped if you use stripUnknown)
-  role: Joi.string().valid('user', 'admin').optional(),
   profilePic: Joi.string().uri().optional().allow(''),
+}).unknown(false).messages({
+  'object.unknown': 'Invalid registration field provided.',
 });
 
 const loginSchema = Joi.object({
@@ -47,9 +47,9 @@ const forgotPasswordSchema = Joi.object({
   phone: Joi.string()
     .trim()
     .pattern(/^[+()\-\s.\d]{7,20}$/)
-    .required()
+    .optional()
+    .allow("")
     .messages({
-      "string.empty": "Phone number is required",
       "string.pattern.base": "Phone number must be valid",
     }),
 });
