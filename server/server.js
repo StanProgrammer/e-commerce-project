@@ -16,6 +16,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const policyRoutes = require('./routes/policyRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 const uploadImage = require('./utils/uploadImage');
 const seedDefaultBlogs = require('./utils/seedDefaultBlogs');
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
@@ -95,6 +96,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/policy', policyRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));

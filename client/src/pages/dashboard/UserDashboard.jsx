@@ -20,6 +20,7 @@ const UserDashboard = () => {
       { path: "/dashboard/profile", label: "Profile", icon: "ri-user-3-line" },
       { path: "/dashboard/payments", label: "Payments", icon: "ri-bank-card-line" },
       { path: "/dashboard/reviews", label: "Reviews", icon: "ri-star-line" },
+      { path: "/dashboard/feedback", label: "Feedback", icon: "ri-bug-line" },
     ],
     []
   );

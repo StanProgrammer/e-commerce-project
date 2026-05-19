@@ -3,6 +3,7 @@ import { Outlet, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import UserDashboard from "./UserDashboard";
 import AdminDashboard from "./AdminDashboard";
+import FeedbackWidget from "../../components/FeedbackWidget";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -35,6 +36,7 @@ const Dashboard = () => {
           <Outlet />
         </div>
       </main>
+      <FeedbackWidget />
     </div>
   );
 };

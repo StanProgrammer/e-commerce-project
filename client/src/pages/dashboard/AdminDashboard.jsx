@@ -22,6 +22,7 @@ const AdminDashboard = () => {
       { path: "manage-policy", label: "Policy", icon: "ri-file-list-3-line" },
       { path: "user-management", label: "Users", icon: "ri-user-3-line" },
       { path: "orders", label: "Orders", icon: "ri-shopping-cart-2-line" },
+      { path: "manage-feedback", label: "Feedback", icon: "ri-feedback-line" },
     ],
     []
   );

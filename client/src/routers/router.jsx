@@ -20,7 +20,9 @@ import OrderDetails from "../pages/dashboard/user/OrderDetails.jsx";
 import UserPayments from "../pages/dashboard/user/UserPayments.jsx";
 import UserReviews from "../pages/dashboard/user/UserReviews.jsx";
 import UserProfile from "../pages/dashboard/user/UserProfile.jsx";
+import UserFeedback from "../pages/dashboard/user/UserFeedback.jsx";
 import AdminMain from "../pages/dashboard/admin/AdminMain.jsx";
+import ManageFeedback from "../pages/dashboard/admin/ManageFeedback.jsx";
 import AddProduct from "../pages/dashboard/admin/addProduct/AddProduct.jsx";
 import ManageProducts from "../pages/dashboard/admin/manageProduct/ManageProducts.jsx";
 import UpdateProduct from "../pages/dashboard/admin/manageProduct/UpdateProduct.jsx";
@@ -130,6 +132,10 @@ const router = createBrowserRouter ([
         path:"reviews",
         element:<UserReviews/>
       },
+      {
+        path:"feedback",
+        element:<UserFeedback/>
+      },
 
       // admin routes
       {
@@ -155,6 +161,10 @@ const router = createBrowserRouter ([
       {
         path:"manage-orders",
         element:<Privateroutes role="admin"><ManageOrders/></Privateroutes>
+      },
+      {
+        path:"manage-feedback",
+        element:<Privateroutes role="admin"><ManageFeedback/></Privateroutes>
       },
       {
         path:"add-blog",

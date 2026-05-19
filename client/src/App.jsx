@@ -3,6 +3,7 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { markAuthChecked, setUser } from "./store/features/auth/authSlice";
@@ -40,6 +41,7 @@ function App() {
       <Navbar />
       <ScrollToTop />
       <Outlet />
+      <FeedbackWidget />
       <Footer />
     </>
   );
