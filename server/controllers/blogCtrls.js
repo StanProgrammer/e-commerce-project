@@ -1,6 +1,14 @@
 const Blog = require("../models/blogModel");
 const asyncHandler = require("../middlewares/asyncHandler");
 const uploadToCloudinary = require("../utils/uploadImage");
+const {
+  invalidateMany,
+  makeKey,
+  normalizeQuery,
+  readThrough,
+  setCacheHeader,
+  ttl,
+} = require("../utils/cache");
 
 const slugify = (value) =>
   value
@@ -40,33 +48,57 @@ const getAllBlogs = asyncHandler(async (req, res) => {
   const filter = { isDeleted: false };
   if (!includeDrafts || req.user?.role !== "admin") filter.isPublished = true;
 
-  const totalBlogs = await Blog.countDocuments(filter);
-  const blogs = await Blog.find(filter)
-    .populate("author", "email username")
-    .sort({ publishedAt: -1, createdAt: -1 })
-    .skip(skip)
-    .limit(numericLimit);
+  const fetchBlogs = async () => {
+    const totalBlogs = await Blog.countDocuments(filter);
+    const blogs = await Blog.find(filter)
+      .populate("author", "email username")
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(numericLimit);
 
-  res.status(200).json({
-    blogs,
-    totalBlogs,
-    totalPages: Math.ceil(totalBlogs / numericLimit),
-    currentPage,
-  });
+    return {
+      blogs,
+      totalBlogs,
+      totalPages: Math.ceil(totalBlogs / numericLimit),
+      currentPage,
+    };
+  };
+
+  if (includeDrafts && req.user?.role === "admin") {
+    return res.status(200).json(await fetchBlogs());
+  }
+
+  const { value, cacheStatus } = await readThrough(
+    makeKey("blogs", "list", normalizeQuery({ page, limit })),
+    fetchBlogs,
+    { ttlSeconds: ttl.blogsList }
+  );
+
+  setCacheHeader(res, cacheStatus);
+  res.status(200).json(value);
 });
 
 const getBlogBySlug = asyncHandler(async (req, res) => {
-  const blog = await Blog.findOne({
-    slug: req.params.slug,
-    isDeleted: false,
-    isPublished: true,
-  }).populate("author", "email username");
+  const { value, cacheStatus } = await readThrough(
+    makeKey("blogs", "slug", req.params.slug),
+    async () => {
+      const blog = await Blog.findOne({
+        slug: req.params.slug,
+        isDeleted: false,
+        isPublished: true,
+      }).populate("author", "email username");
 
-  if (!blog) {
+      return blog ? { blog } : null;
+    },
+    { ttlSeconds: ttl.blogDetail }
+  );
+
+  if (!value) {
     return res.status(404).json({ message: "Blog not found" });
   }
 
-  res.status(200).json({ blog });
+  setCacheHeader(res, cacheStatus);
+  res.status(200).json(value);
 });
 
 const getBlogById = asyncHandler(async (req, res) => {
@@ -98,6 +130,8 @@ const createBlog = asyncHandler(async (req, res) => {
     author: req.user.sub,
   });
 
+  await invalidateMany(["blogs:list:*", makeKey("blogs", "slug", blog.slug)]);
+
   res.status(201).json({
     message: "Blog created successfully",
     blog,
@@ -128,6 +162,12 @@ const updateBlog = asyncHandler(async (req, res) => {
     runValidators: true,
   });
 
+  await invalidateMany([
+    "blogs:list:*",
+    makeKey("blogs", "slug", existingBlog.slug),
+    makeKey("blogs", "slug", blog.slug),
+  ]);
+
   res.status(200).json({
     message: "Blog updated successfully",
     blog,
@@ -144,6 +184,8 @@ const deleteBlog = asyncHandler(async (req, res) => {
   if (!blog) {
     return res.status(404).json({ message: "Blog not found" });
   }
+
+  await invalidateMany(["blogs:list:*", makeKey("blogs", "slug", blog.slug)]);
 
   res.status(200).json({ message: "Blog deleted successfully" });
 });

@@ -14,6 +14,7 @@ A full-stack MERN ecommerce application with a React storefront, user dashboard,
 - Blog and policy management
 - Contact form support
 - MongoDB data persistence with Mongoose
+- Redis connection support with health reporting
 - Stripe 
 
 ## Tech Stack
@@ -33,6 +34,7 @@ A full-stack MERN ecommerce application with a React storefront, user dashboard,
 - Node.js
 - Express
 - MongoDB and Mongoose
+- Redis
 - JWT authentication
 - Joi validation
 - Multer and Cloudinary
@@ -64,6 +66,7 @@ A full-stack MERN ecommerce application with a React storefront, user dashboard,
 - Node.js
 - npm
 - MongoDB database
+- Redis server or managed Redis database
 - Stripe account for Stripe payments
 - Cloudinary account for image uploads
 
@@ -124,6 +127,9 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GMAIL_USER=your_gmail_address
 GMAIL_APP_PASSWORD=your_gmail_app_password
 PASSWORD_RESET_CLIENT_URL=http://localhost:5173
+REDIS_ENABLED=false
+REDIS_URL=redis://localhost:6379
+REDIS_KEY_PREFIX=wiles-rues:
 ```
 
 Copy `client/.env.example` to `client/.env.development` for local development:
@@ -168,6 +174,53 @@ The backend will usually run at:
 ```text
 http://localhost:5000
 ```
+
+### Redis Setup
+
+For local development, install and start Redis, then enable it in `server/.env`:
+
+```env
+REDIS_ENABLED=true
+REDIS_URL=redis://localhost:6379
+REDIS_KEY_PREFIX=wiles-rues:
+REDIS_CONNECT_TIMEOUT_MS=10000
+REDIS_PING_TIMEOUT_MS=3000
+CACHE_PRODUCTS_LIST_TTL_SECONDS=120
+CACHE_PRODUCT_DETAIL_TTL_SECONDS=300
+CACHE_RELATED_PRODUCTS_TTL_SECONDS=180
+CACHE_BLOGS_LIST_TTL_SECONDS=180
+CACHE_BLOG_DETAIL_TTL_SECONDS=600
+CACHE_POLICY_TTL_SECONDS=900
+```
+
+On Windows, Redis is commonly run through Docker or WSL:
+
+```bash
+docker run --name wiles-rues-redis -p 6379:6379 -d redis:7-alpine
+```
+
+For production, create a managed Redis instance and set `REDIS_ENABLED=true` plus the provider connection string in `REDIS_URL`. Use a TLS URL when your provider requires it, for example `rediss://default:password@host:6379`.
+
+Verify Redis health through the backend health endpoint:
+
+```text
+GET /api/health
+```
+
+When Redis is enabled and connected, the response includes:
+
+```json
+{
+  "status": "ok",
+  "redis": {
+    "enabled": true,
+    "status": "ok",
+    "latencyMs": 1
+  }
+}
+```
+
+Cached API responses include an `X-Cache` header (`HIT`, `MISS`, `SKIP`, or `BYPASS`) and the server logs cache hits, misses, writes, Redis errors, and invalidation counts with a `[cache]` prefix. Product, blog, review, and policy writes invalidate the relevant cached read paths immediately.
 
 ## Available Scripts
 
@@ -240,6 +293,17 @@ CONTACT_FROM_EMAIL
 GMAIL_USER
 GMAIL_APP_PASSWORD
 SMTP_TIMEOUT_MS=45000
+REDIS_ENABLED=true
+REDIS_URL
+REDIS_KEY_PREFIX=wiles-rues:
+REDIS_CONNECT_TIMEOUT_MS=10000
+REDIS_PING_TIMEOUT_MS=3000
+CACHE_PRODUCTS_LIST_TTL_SECONDS=120
+CACHE_PRODUCT_DETAIL_TTL_SECONDS=300
+CACHE_RELATED_PRODUCTS_TTL_SECONDS=180
+CACHE_BLOGS_LIST_TTL_SECONDS=180
+CACHE_BLOG_DETAIL_TTL_SECONDS=600
+CACHE_POLICY_TTL_SECONDS=900
 ```
 
 Password reset emails use Nodemailer with Gmail SMTP. `GMAIL_USER` must be the Gmail address and `GMAIL_APP_PASSWORD` must be a 16-character Google app password, not the regular Gmail login password. Set `PASSWORD_RESET_CLIENT_URL` to the deployed client URL so emailed reset links do not point to localhost.

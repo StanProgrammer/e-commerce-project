@@ -4,6 +4,7 @@ const Product = require("../models/prdModel.js");
 const Order = require("../models/orderModel.js");
 const User = require("../models/userModel.js");
 const { default: mongoose } = require("mongoose");
+const { invalidateMany, makeKey } = require("../utils/cache.js");
 
 const reviewableOrderStatuses = ["processing", "shipped", "delivered", "completed"];
 
@@ -60,6 +61,12 @@ const postReview = asyncHandler(async (req, res) => {
   await Product.findByIdAndUpdate(productId, {
     rating: avgRating,
   });
+
+  await invalidateMany([
+    "products:list:*",
+    "products:related:*",
+    makeKey("products", "detail", productId),
+  ]);
 
   // 4. Send differentiated message
   const message = existingReview 

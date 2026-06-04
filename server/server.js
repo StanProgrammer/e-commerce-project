@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { config, trimTrailingSlash } = require('./config/env');
 const { connectDatabase } = require('./config/database');
+const { connectRedis, getRedisHealth } = require('./config/redis');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -101,6 +102,13 @@ const initializeApp = async () => {
   if (!appInitPromise) {
     appInitPromise = connectDatabase()
       .then(async () => {
+        try {
+          await connectRedis();
+        } catch (error) {
+          console.error("Redis initialization failed; continuing without cache:", error.message);
+        }
+      })
+      .then(async () => {
         if (config.seedDefaultBlogs) {
           await seedDefaultBlogs();
         }
@@ -138,12 +146,19 @@ app.use('/api/feedback', feedbackRoutes);
 
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    environment: config.nodeEnv,
-    dbState: mongoose.connection.readyState,
-  });
+app.get('/api/health', async (req, res, next) => {
+  try {
+    const redis = await getRedisHealth();
+
+    res.status(200).json({
+      status: redis.status === 'error' ? 'degraded' : 'ok',
+      environment: config.nodeEnv,
+      dbState: mongoose.connection.readyState,
+      redis,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.post("/api/upload-image", uploadLimiter, verifyToken, adminOnly, async (req, res, next) => {

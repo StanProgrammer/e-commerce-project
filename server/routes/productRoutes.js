@@ -35,6 +35,12 @@ router.get(
 );
 
 router.get(
+  '/related-products/:id',
+  validateParams(getProductByIdSchema),
+  prdCtrls.getRelatedProducts
+);
+
+router.get(
   '/:id',
   validateParams(getProductByIdSchema),
   prdCtrls.getSingleProduct

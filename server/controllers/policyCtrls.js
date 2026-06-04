@@ -1,5 +1,6 @@
 const Policy = require("../models/policyModel");
 const asyncHandler = require("../middlewares/asyncHandler");
+const { invalidateMany, makeKey, readThrough, setCacheHeader, ttl } = require("../utils/cache");
 
 const POLICY_KEY = "terms-and-conditions";
 
@@ -51,8 +52,17 @@ const getOrCreatePolicy = async () => {
 };
 
 const getPolicy = asyncHandler(async (req, res) => {
-  const policy = await getOrCreatePolicy();
-  res.status(200).json({ policy });
+  const { value, cacheStatus } = await readThrough(
+    makeKey("policy", "current"),
+    async () => {
+      const policy = await getOrCreatePolicy();
+      return { policy };
+    },
+    { ttlSeconds: ttl.policy }
+  );
+
+  setCacheHeader(res, cacheStatus);
+  res.status(200).json(value);
 });
 
 const updatePolicy = asyncHandler(async (req, res) => {
@@ -65,6 +75,8 @@ const updatePolicy = asyncHandler(async (req, res) => {
 
   await policy.save();
   await policy.populate("updatedBy", "username email");
+
+  await invalidateMany([makeKey("policy", "current")]);
 
   res.status(200).json({
     message: "Policy updated successfully",

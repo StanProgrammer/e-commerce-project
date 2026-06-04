@@ -11,10 +11,19 @@ const parsePositiveInteger = (value, fallback) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+const parseBoolean = (value, fallback = false) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
+};
+
 const nodeEnv = process.env.NODE_ENV || "development";
 const isProduction = nodeEnv === "production";
 
 const clientUrl = trimTrailingSlash(process.env.CLIENT_URL || "http://localhost:5173");
+const redisEnabled = parseBoolean(process.env.REDIS_ENABLED, Boolean(process.env.REDIS_URL));
 
 const config = {
   nodeEnv,
@@ -55,6 +64,13 @@ const config = {
   gmailUser: process.env.GMAIL_USER,
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS,
   smtpTimeoutMs: parsePositiveInteger(process.env.SMTP_TIMEOUT_MS, 45000),
+  redis: {
+    enabled: redisEnabled,
+    url: process.env.REDIS_URL || "redis://localhost:6379",
+    keyPrefix: process.env.REDIS_KEY_PREFIX || "wiles-rues:",
+    connectTimeoutMs: parsePositiveInteger(process.env.REDIS_CONNECT_TIMEOUT_MS, 10000),
+    pingTimeoutMs: parsePositiveInteger(process.env.REDIS_PING_TIMEOUT_MS, 3000),
+  },
   seedDefaultBlogs: process.env.SEED_DEFAULT_BLOGS !== "false",
 };
 
@@ -79,9 +95,20 @@ const validateCoreEnv = () => {
   );
 };
 
+const validateRedisEnv = () => {
+  if (!config.redis.enabled) {
+    return;
+  }
+
+  if (config.isProduction && !process.env.REDIS_URL) {
+    throw new Error("Missing Redis environment variable(s): REDIS_URL");
+  }
+};
+
 module.exports = {
   config,
   requireEnv,
   trimTrailingSlash,
   validateCoreEnv,
+  validateRedisEnv,
 };
