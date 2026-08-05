@@ -1,4 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
+
+// Load environment-specific overrides on top of .env:
+// - development (default): .env.local
+// - production:            .env.production
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
+require('dotenv').config({ path: envFile, override: true, quiet: true });
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
