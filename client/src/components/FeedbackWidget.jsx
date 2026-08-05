@@ -123,6 +123,44 @@ const FeedbackWidget = () => {
   const [submitStatus, setSubmitStatus] = useState("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Declared above the effects below: the outside-click/Escape effect depends
+  // on closeFeedback, and closeFeedback depends on resetFeedbackSession.
+  const resetFeedbackSession = useCallback(() => {
+    setActiveType("bug");
+    setSubmittedMessage("");
+    setSubmitStatus("idle");
+    setIsSubmitting(false);
+    setFormData(EMPTY_FORM_DATA);
+  }, []);
+
+  const closeFeedback = useCallback(
+    (event) => {
+      event?.stopPropagation();
+      if (!isOpen || isClosingRef.current) {
+        return;
+      }
+
+      dragState.current = null;
+      dragMoved.current = false;
+      isClosingRef.current = true;
+      setIsClosing(true);
+
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+      }
+
+      closeTimer.current = setTimeout(() => {
+        resetFeedbackSession();
+        setPosition(savedLauncherPosition.current);
+        setIsOpen(false);
+        isClosingRef.current = false;
+        setIsClosing(false);
+        closeTimer.current = null;
+      }, FEEDBACK_CLOSE_TRANSITION_MS);
+    },
+    [isOpen, resetFeedbackSession]
+  );
+
   useEffect(() => {
     const handleResize = () => {
       savedLauncherPosition.current = clampPositionBySize(
@@ -202,14 +240,6 @@ const FeedbackWidget = () => {
     return () => observer.disconnect();
   }, [isOpen]);
 
-  const resetFeedbackSession = useCallback(() => {
-    setActiveType("bug");
-    setSubmittedMessage("");
-    setSubmitStatus("idle");
-    setIsSubmitting(false);
-    setFormData(EMPTY_FORM_DATA);
-  }, []);
-
   const startDrag = (event) => {
     if (event.button !== undefined && event.button !== 0) {
       return;
@@ -279,34 +309,6 @@ const FeedbackWidget = () => {
       setIsOpen(true);
     }
   };
-
-  const closeFeedback = useCallback(
-    (event) => {
-      event?.stopPropagation();
-      if (!isOpen || isClosingRef.current) {
-        return;
-      }
-
-      dragState.current = null;
-      dragMoved.current = false;
-      isClosingRef.current = true;
-      setIsClosing(true);
-
-      if (closeTimer.current) {
-        clearTimeout(closeTimer.current);
-      }
-
-      closeTimer.current = setTimeout(() => {
-        resetFeedbackSession();
-        setPosition(savedLauncherPosition.current);
-        setIsOpen(false);
-        isClosingRef.current = false;
-        setIsClosing(false);
-        closeTimer.current = null;
-      }, FEEDBACK_CLOSE_TRANSITION_MS);
-    },
-    [isOpen, resetFeedbackSession]
-  );
 
   const updateField = (field, value) => {
     setSubmittedMessage("");
