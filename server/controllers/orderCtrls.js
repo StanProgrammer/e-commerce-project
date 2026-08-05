@@ -82,7 +82,65 @@ lineItems.push({
 });
 
 
-//confirm payment 
+// Record an order from a Stripe checkout session. Idempotent: when an order
+// already exists for the payment intent (e.g. the client confirm request and
+// the webhook both run), it is updated instead of duplicated.
+const recordOrderFromSession = async (session) => {
+  const paymentIntentId = session.payment_intent?.id;
+
+  if (!paymentIntentId) {
+    return null;
+  }
+
+  const isPaid = session.payment_intent?.status === "succeeded";
+  const email = (session.customer_details?.email || session.customer_email || "").toLowerCase();
+
+  let order = await Order.findOne({ orderId: paymentIntentId });
+
+  if (!order) {
+    const lineItems = (session.line_items?.data || []).map((item) => ({
+      productId: item.price.product.metadata.productId,
+      quantity: item.quantity,
+    }));
+
+    const amount = session.amount_total / 100;
+
+    order = new Order({
+      orderId: paymentIntentId,
+      products: lineItems,
+      amount,
+      email,
+      status: isPaid ? "processing" : "pending",
+      statusHistory: [
+        {
+          status: "pending",
+          time: new Date(),
+        },
+        ...(isPaid ? [{ status: "processing", time: new Date() }] : []),
+      ],
+    });
+  } else {
+    order.status = isPaid ? "processing" : "pending";
+  }
+
+  try {
+    await order.save();
+  } catch (error) {
+    // A concurrent request (webhook + confirm-payment) may have already
+    // recorded this order. Fall back to the existing document.
+    if (error?.code === 11000) {
+      const existing = await Order.findOne({ orderId: paymentIntentId });
+      if (existing) {
+        return existing;
+      }
+    }
+    throw error;
+  }
+
+  return order;
+};
+
+//confirm payment
 const confirmPayment = asyncHandler(async (req, res) => {
   const stripe = getStripe();
   const { sessionId } = req.body;
@@ -100,48 +158,39 @@ const confirmPayment = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "You can only confirm your own checkout session." });
   }
 
-  const paymentIntentId = session.payment_intent.id;
-
-  let order = await Order.findOne({ orderId: paymentIntentId });
-
-  if (!order) {
-    const lineItems = session.line_items.data.map((item) => ({
-      productId: item.price.product.metadata.productId, 
-      quantity: item.quantity,
-    }));
-
-    const amount = session.amount_total / 100;
-
-    order = new Order({
-  orderId: paymentIntentId,
-  products: lineItems,
-  amount,
-  email: session.customer_details.email,
-  status:
-    session.payment_intent.status === "succeeded"
-      ? "processing"
-      : "pending",
-
-  statusHistory: [
-    {
-      status: "pending",
-      time: new Date(),
-    },
-    ...(session.payment_intent.status === "succeeded"
-      ? [{ status: "processing", time: new Date() }]
-      : []),
-  ],
-});
-  } else {
-    order.status =
-      session.payment_intent.status === "succeeded"
-        ? "processing"
-        : "pending";
-  }
-
-  await order.save();
+  const order = await recordOrderFromSession(session);
 
   res.status(200).json({ message: "Payment confirmed", order });
+});
+
+// Stripe webhook: records paid orders even when the redirect back to the
+// store fails (e.g. the browser closes right after the payment succeeds).
+const stripeWebhook = asyncHandler(async (req, res) => {
+  const stripe = getStripe();
+  const signature = req.headers["stripe-signature"];
+
+  requireEnv([["STRIPE_WEBHOOK_SECRET", config.stripeWebhookSecret]], "Stripe webhook");
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, signature, config.stripeWebhookSecret);
+  } catch (error) {
+    console.error("Stripe webhook signature verification failed:", error.message);
+    return res.status(400).json({ message: "Webhook signature verification failed." });
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = await stripe.checkout.sessions.retrieve(event.data.object.id, {
+      expand: ["line_items.data.price.product", "payment_intent"],
+    });
+
+    // Only record the order when the payment actually succeeded.
+    if (session.payment_status === "paid" && session.payment_intent?.status === "succeeded") {
+      await recordOrderFromSession(session);
+    }
+  }
+
+  res.status(200).json({ received: true });
 });
 
 //get orders by email address
@@ -180,10 +229,8 @@ const getOrdersById = asyncHandler(async (req, res) => {
 
 const getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ isDeleted: false }).sort({ createdAt: -1 });
-  if (!orders || orders.length === 0) {
-    return res.status(404).json({ message: "No orders found" });
-  }
 
+  // Always return 200 with an array so the client can render its empty state.
   res.status(200).json(orders);
 });
 
@@ -252,6 +299,7 @@ const deleteOrder = asyncHandler(async (req, res) => {
 module.exports = {
   createCheckoutSession,
     confirmPayment,
+    stripeWebhook,
     getOrdersByEmail,
     getOrdersById,
     getAllOrders,

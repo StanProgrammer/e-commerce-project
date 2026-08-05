@@ -34,7 +34,7 @@ const totalPayments = orders.reduce((total, order) => total + order.amount, 0).t
                                 <div className='flex md:flex-row items-center space-x-2'>
                                     <span className='text-gray-600'>Date: {new Date(order?.createdAt).toLocaleDateString()}</span>
                                     <p className='text-gray-600'>
-                                        Status: <span className={`ml-2 py-0.5 px-2 text-sm rounded ${order?.status === "completed" ? "bg-green-100 text-green-700" : order?.status === "pending" ? "bg-yellow-100 text-yellow-700" : order?.status === "processing" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
+                                        Status: <span className={`ml-2 py-0.5 px-2 text-sm rounded ${order?.status === "delivered" ? "bg-green-100 text-green-700" : order?.status === "shipped" ? "bg-indigo-100 text-indigo-700" : order?.status === "pending" ? "bg-yellow-100 text-yellow-700" : order?.status === "processing" ? "bg-blue-100 text-blue-700" : order?.status === "canceled" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"}`}>
                                             {order?.status}
                                         </span>
                                     </p>

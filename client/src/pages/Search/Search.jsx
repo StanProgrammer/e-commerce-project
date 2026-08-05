@@ -1,22 +1,22 @@
 import React, { useState } from "react";
-import products from "../../data/products";
 import PrdCard from "../Shop/PrdCard";
+import MessageState from "../../components/MessageState";
+import { useFetchAllProductsQuery } from "../../store/features/products/productsApi";
 
 const Search = () => {
   const [search, setSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [submittedSearch, setSubmittedSearch] = useState("");
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const value = search.toLowerCase().trim();
-    if (!value) {
-      setFilteredProducts(products)
-      return;
-    }
-    const filtered = products.filter((product) =>
-      product.name.toLowerCase().includes(value)
-    );
-    setFilteredProducts(filtered);
+  const { data, isLoading, isFetching, isError } = useFetchAllProductsQuery({
+    search: submittedSearch || undefined,
+    limit: 100,
+  });
+
+  const products = data?.products ?? [];
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    setSubmittedSearch(search.trim());
   };
 
   return (
@@ -28,11 +28,11 @@ const Search = () => {
 
       <section className="section__container">
         <div className="flex justify-center">
-          <form onSubmit={handleSearch} className="flex items-center max-w-4xl w-full mb-4!">
+          <form onSubmit={handleSearch} className="flex items-center max-w-4xl w-full mb-4">
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search for products..."
               className="search-bar flex-1 h-12 rounded-l-md border border-gray-300"
             />
@@ -44,7 +44,27 @@ const Search = () => {
         </div>
 
         <div className="mt-8">
-          <PrdCard products={filteredProducts} />
+          {isLoading || isFetching ? (
+            <MessageState
+              tone="loading"
+              title="Searching products"
+              message="Finding products that match your search."
+            />
+          ) : isError ? (
+            <MessageState
+              tone="error"
+              title="Search could not be completed"
+              message="Refresh the page and try again."
+            />
+          ) : products.length === 0 ? (
+            <MessageState
+              tone="empty"
+              title="No products match your search"
+              message="Try a different keyword or browse the full shop."
+            />
+          ) : (
+            <PrdCard products={products} />
+          )}
         </div>
       </section>
     </>

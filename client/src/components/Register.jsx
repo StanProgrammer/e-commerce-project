@@ -333,11 +333,11 @@ export default function Register() {
                 />
                 <span className="leading-6">
                   I agree to the{" "}
-                  <Link to="/terms" className="font-medium text-primary hover:underline">
+                  <Link to="/policy" className="font-medium text-primary hover:underline">
                     Terms
                   </Link>{" "}
                   and{" "}
-                  <Link to="/privacy" className="font-medium text-primary hover:underline">
+                  <Link to="/policy" className="font-medium text-primary hover:underline">
                     Privacy Policy
                   </Link>
                   .

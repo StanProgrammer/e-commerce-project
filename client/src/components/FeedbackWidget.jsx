@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import getApiErrorMessage from "../utils/getApiErrorMessage";
 import getBaseUrl from "../utils/baseUrl";
@@ -168,7 +168,7 @@ const FeedbackWidget = () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, closeFeedback]);
 
   useEffect(() => {
     try {
@@ -202,13 +202,13 @@ const FeedbackWidget = () => {
     return () => observer.disconnect();
   }, [isOpen]);
 
-  const resetFeedbackSession = () => {
+  const resetFeedbackSession = useCallback(() => {
     setActiveType("bug");
     setSubmittedMessage("");
     setSubmitStatus("idle");
     setIsSubmitting(false);
     setFormData(EMPTY_FORM_DATA);
-  };
+  }, []);
 
   const startDrag = (event) => {
     if (event.button !== undefined && event.button !== 0) {
@@ -280,30 +280,33 @@ const FeedbackWidget = () => {
     }
   };
 
-  const closeFeedback = (event) => {
-    event?.stopPropagation();
-    if (!isOpen || isClosingRef.current) {
-      return;
-    }
+  const closeFeedback = useCallback(
+    (event) => {
+      event?.stopPropagation();
+      if (!isOpen || isClosingRef.current) {
+        return;
+      }
 
-    dragState.current = null;
-    dragMoved.current = false;
-    isClosingRef.current = true;
-    setIsClosing(true);
+      dragState.current = null;
+      dragMoved.current = false;
+      isClosingRef.current = true;
+      setIsClosing(true);
 
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-    }
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+      }
 
-    closeTimer.current = setTimeout(() => {
-      resetFeedbackSession();
-      setPosition(savedLauncherPosition.current);
-      setIsOpen(false);
-      isClosingRef.current = false;
-      setIsClosing(false);
-      closeTimer.current = null;
-    }, FEEDBACK_CLOSE_TRANSITION_MS);
-  };
+      closeTimer.current = setTimeout(() => {
+        resetFeedbackSession();
+        setPosition(savedLauncherPosition.current);
+        setIsOpen(false);
+        isClosingRef.current = false;
+        setIsClosing(false);
+        closeTimer.current = null;
+      }, FEEDBACK_CLOSE_TRANSITION_MS);
+    },
+    [isOpen, resetFeedbackSession]
+  );
 
   const updateField = (field, value) => {
     setSubmittedMessage("");

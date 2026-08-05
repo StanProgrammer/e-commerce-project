@@ -96,6 +96,9 @@ const PaymentSuccess = () => {
     return <MessageState tone="loading" title="Confirming your payment" message="Please wait while we verify your payment and prepare your order details." className="section__container" />;
   }
   const isCompleted = (status) => {
+    // A canceled order has no completed steps.
+    if (orderDetails.status === "canceled") return false;
+
     const statusMap = ["pending", "processing", "shipped", "delivered"];
     return statusMap.indexOf(status) < statusMap.indexOf(orderDetails.status);
   };

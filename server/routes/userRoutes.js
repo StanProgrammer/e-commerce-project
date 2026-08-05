@@ -6,7 +6,7 @@ const { verifyToken } = require('../utils/helper');
 const adminOnly = require('../middlewares/adminOnly');
 const userCtrls = require('../controllers/userCtrls');
 const validateBody = require('../middlewares/validateBody');
-const { updateUserSchema } = require('../validation/userValidator');
+const { updateUserSchema, updateUserProfileSchema } = require('../validation/userValidator');
 const { uploadLimiter, writeLimiter } = require('../middlewares/rateLimiter');
 
 const avatarUpload = multer({
@@ -46,6 +46,7 @@ router.patch(
   uploadLimiter,
   verifyToken,
   uploadAvatar,
+  validateBody(updateUserProfileSchema),
   userCtrls.updateUserProfileWithAvatar
 );
 

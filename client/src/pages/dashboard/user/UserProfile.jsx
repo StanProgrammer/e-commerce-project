@@ -125,7 +125,6 @@ const UserProfile = () => {
       }).unwrap();
 
       dispatch(setUser(response.user));
-      localStorage.setItem("user", JSON.stringify(response.user));
       setIsModalOpen(false);
       resetAvatarSelection();
       toast.success("Profile updated. Your changes have been saved.");

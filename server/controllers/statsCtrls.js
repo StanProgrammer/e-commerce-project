@@ -24,23 +24,26 @@ const getUserStats = asyncHandler(async (req, res) => {
   }
 
   // Total spent + total purchased
-  const orderStats = await Order.aggregate([
-  { $match: { email, isDeleted: false } }, // 
-  { $unwind: "$products" }, // 
-  {
-    $group: {
-      _id: null,
-      totalSpent: { $sum: "$amount" }, // total money
-      totalPurchased: { $sum: "$products.quantity" } // total items
-    }
-  }
-]);
+  // NOTE: amount is summed per order (not per product line), while the
+  // purchased item count is summed across unwound product lines.
+  const [orderStats] = await Order.aggregate([
+    { $match: { email, isDeleted: false } },
+    {
+      $facet: {
+        spent: [
+          { $group: { _id: null, totalSpent: { $sum: "$amount" } } },
+        ],
+        purchased: [
+          { $unwind: "$products" },
+          { $group: { _id: null, totalPurchased: { $sum: "$products.quantity" } } },
+        ],
+      },
+    },
+  ]);
 
-  const totalSpent =
-    orderStats.length > 0 ? orderStats[0].totalSpent : 0;
+  const totalSpent = orderStats?.spent?.[0]?.totalSpent || 0;
 
-  const totalPurchased =
-    orderStats.length > 0 ? orderStats[0].totalPurchased : 0;
+  const totalPurchased = orderStats?.purchased?.[0]?.totalPurchased || 0;
 
   const totalReviews = await Review.countDocuments({
     userId: user._id,

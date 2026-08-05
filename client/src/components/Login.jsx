@@ -132,6 +132,7 @@ export default function LoginPage() {
       const res = await loginUser({
         email: form.email.trim(),
         password: form.password,
+        remember: form.remember,
       }).unwrap();
 
       dispatch(setUser(res.user));

@@ -17,7 +17,7 @@ const ProductPage = () => {
 
   const dispatch = useDispatch();
   const singleProduct = product?.product || {};
-  const productImages = useMemo(() => getProductImages(singleProduct), [singleProduct]);
+  const productImages = useMemo(() => getProductImages(product?.product), [product]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const productReviews = product?.reviews || [];
   const reviewCount = productReviews.length;

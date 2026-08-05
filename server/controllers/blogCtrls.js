@@ -162,6 +162,15 @@ const updateBlog = asyncHandler(async (req, res) => {
     runValidators: true,
   });
 
+  // Delete the replaced image from Cloudinary (best-effort, never fails the request).
+  if (uploadedImageUrl && existingBlog.imageUrl && existingBlog.imageUrl !== uploadedImageUrl) {
+    try {
+      await uploadToCloudinary.delete(existingBlog.imageUrl);
+    } catch (error) {
+      console.error("Previous blog image deletion failed:", error.message);
+    }
+  }
+
   await invalidateMany([
     "blogs:list:*",
     makeKey("blogs", "slug", existingBlog.slug),

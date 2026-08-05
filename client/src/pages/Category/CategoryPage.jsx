@@ -1,28 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
-import products from '../../data/products';
 import categoryContent from '../../data/categoryContent';
 import PrdCard from '../Shop/PrdCard';
+import MessageState from '../../components/MessageState';
+import { useFetchAllProductsQuery } from '../../store/features/products/productsApi';
 
 const CategoryPage = () => {
   const { categoryName } = useParams();
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const normalizedCategory = (categoryName || '').toLowerCase();
 
-  
-  useEffect(() => {
-    const filtered = products.filter(
+  const { data, isLoading, isError } = useFetchAllProductsQuery({
+    category: normalizedCategory,
+    limit: 100,
+  });
 
-      (product) => {
-        return product.category.toLowerCase() === categoryName.toLowerCase()
-      }
-    );
-    setFilteredProducts(filtered);
-  }, [categoryName]);
+  const products = data?.products ?? [];
 
-  const current = categoryContent[categoryName.toLowerCase()] || {
+  const current = categoryContent[normalizedCategory] || {
     title: categoryName,
-    subtitle:
-      "Browse a wide range of products selected just for you."
+    subtitle: 'Browse a wide range of products selected just for you.',
   };
 
   return (
@@ -31,9 +27,29 @@ const CategoryPage = () => {
         <h2 className="section__header capitalize">{current.title}</h2>
         <p className="section__subheader">{current.subtitle}</p>
       </section>
-      <div className="section__container">
-        <PrdCard products={filteredProducts} />
-      </div>
+      <section className="section__container">
+        {isLoading ? (
+          <MessageState
+            tone="loading"
+            title="Loading products"
+            message="We are finding products in this category."
+          />
+        ) : isError ? (
+          <MessageState
+            tone="error"
+            title="Products could not be loaded"
+            message="Refresh the page and try again."
+          />
+        ) : products.length === 0 ? (
+          <MessageState
+            tone="empty"
+            title="No products in this category yet"
+            message="Check back soon or browse the full shop."
+          />
+        ) : (
+          <PrdCard products={products} />
+        )}
+      </section>
     </>
   );
 };

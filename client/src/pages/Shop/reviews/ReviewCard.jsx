@@ -6,7 +6,7 @@ import Ratings from "../../../components/Ratings";
 import ReviewModal from "./ReviewModal";
 import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
 
-const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered", "completed"]);
+const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered"]);
 
 const ReviewCard = ({ productReviews = [] }) => {
   const { id: productId } = useParams();

@@ -40,16 +40,17 @@ const register = asyncHandler(async (req, res) => {
   // after validateBody, req.body contains sanitized fields only
   const { username, email, password, profilePic = '' } = req.body;
 
-  // check duplicates (username OR email)
-  const existing = await User.findOne({
-    $or: [{ username: username }, { email: email }]
+  // check duplicates against ACTIVE accounts (username OR email)
+  const activeUser = await User.findOne({
+    $or: [{ username: username }, { email: email }],
+    isDeleted: false,
   });
 
-  if (existing) {
-    if (existing.username === username) {
+  if (activeUser) {
+    if (activeUser.username === username) {
       return res.status(409).json({ message: 'Username already in use.' });
     }
-    if (existing.email === email) {
+    if (activeUser.email === email) {
       return res.status(409).json({ message: 'Email already in use.' });
     }
     return res.status(409).json({ message: 'User already exists.' });
@@ -58,6 +59,57 @@ const register = asyncHandler(async (req, res) => {
   // hash password
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(password, salt);
+
+  // If a soft-deleted account holds this username/email, reactivate it with
+  // the fresh credentials instead of permanently locking the identity.
+  const deletedUser = await User.findOne({
+    $or: [{ username: username }, { email: email }],
+    isDeleted: true,
+  });
+
+  if (deletedUser) {
+    // Make sure no OTHER deleted account is blocking the new credentials
+    // (unique indexes still include soft-deleted documents).
+    const blocker = await User.exists({
+      _id: { $ne: deletedUser._id },
+      isDeleted: true,
+      $or: [{ username: username }, { email: email }],
+    });
+
+    if (blocker) {
+      return res.status(409).json({ message: 'Email or username is already in use.' });
+    }
+
+    deletedUser.username = username;
+    deletedUser.email = email;
+    deletedUser.password = hashed;
+    deletedUser.profilePic = profilePic;
+    deletedUser.role = 'user';
+    deletedUser.bio = '';
+    deletedUser.profession = '';
+    deletedUser.isDeleted = false;
+    deletedUser.googleId = undefined;
+    deletedUser.passwordChangedAt = new Date();
+    deletedUser.passwordResetToken = undefined;
+    deletedUser.passwordResetExpires = undefined;
+
+    try {
+      await deletedUser.save();
+    } catch (error) {
+      // A concurrent registration may have claimed the username/email first.
+      if (error?.code === 11000) {
+        return res.status(409).json({ message: 'Email or username is already in use.' });
+      }
+      throw error;
+    }
+
+    res.cookie('token', generateToken(deletedUser), cookieOptions);
+
+    return res.status(201).json({
+      message: 'User created',
+      user: buildUserResponse(deletedUser),
+    });
+  }
 
   // create user
   const user = new User({
@@ -68,7 +120,15 @@ const register = asyncHandler(async (req, res) => {
     profilePic,
   });
 
-  await user.save();
+  try {
+    await user.save();
+  } catch (error) {
+    // A concurrent registration may have claimed the username/email first.
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: 'Email or username is already in use.' });
+    }
+    throw error;
+  }
   // Set cookie
   res.cookie('token', generateToken(user), cookieOptions);
 
@@ -81,7 +141,7 @@ const register = asyncHandler(async (req, res) => {
 )
 // POST /api/auth/login
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, remember = false } = req.body;
 
   // Find user 
   const user = await User.findOne({ email,isDeleted: false });
@@ -95,8 +155,17 @@ const login = asyncHandler(async (req, res) => {
   if (!isMatch) {
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
-  // Set cookie
-  res.cookie('token', generateToken(user), cookieOptions);
+  // Set cookie (30 days when "remember me" is checked, otherwise the default
+  // lifetime derived from config.jwtExpires).
+  const expiresIn = remember ? "30d" : config.jwtExpires;
+  const maxAge = remember
+    ? 1000 * 60 * 60 * 24 * 30
+    : cookieOptions.maxAge;
+
+  res.cookie("token", generateToken(user, expiresIn), {
+    ...cookieOptions,
+    maxAge,
+  });
 
   // Return user info
   return res.json({

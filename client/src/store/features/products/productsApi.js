@@ -16,7 +16,8 @@ export const productsApi = createApi({
         category,
         color,
         minPrice,
-        maxPrice, 
+        maxPrice,
+        search,
         page = 1,
         limit = 10,
       } = {}) => {
@@ -26,6 +27,7 @@ export const productsApi = createApi({
         if (color) params.append("color", color);
         if (minPrice) params.append("minPrice", String(minPrice));
         if (maxPrice) params.append("maxPrice", String(maxPrice));
+        if (search) params.append("search", search);
 
         params.append("page", String(page));
         params.append("limit", String(limit));

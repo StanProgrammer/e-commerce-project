@@ -55,12 +55,16 @@ const createProduct = asyncHandler(async (req, res) => {
 });
 
 /* ================= GET ALL PRODUCTS ================= */
+const escapeRegex = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const getAllProducts = asyncHandler(async (req, res) => {
   const {
     category,
     color,
     minPrice,
     maxPrice,
+    search,
     page = 1,
     limit = 10,
   } = req.query;
@@ -69,6 +73,9 @@ const getAllProducts = asyncHandler(async (req, res) => {
 
   if (category && category !== "all") filter.category = category;
   if (color && color !== "all") filter.color = color;
+  if (search && String(search).trim()) {
+    filter.name = { $regex: escapeRegex(String(search).trim()), $options: "i" };
+  }
 
   if (minPrice || maxPrice) {
     filter.price = {};
@@ -142,6 +149,12 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   let updateData = { ...req.body };
 
+  const existingProduct = await Product.findOne({ _id: id, isDeleted: false });
+
+  if (!existingProduct) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
   let existingImages = [];
 
   if (req.body.existingImages !== undefined) {
@@ -164,10 +177,11 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 
   const finalImages = [...existingImages, ...newImageUrls];
-  if (
+  const imagesWereUpdated =
     req.body.existingImages !== undefined ||
-    (req.files && req.files.length > 0)
-  ) {
+    (req.files && req.files.length > 0);
+
+  if (imagesWereUpdated) {
     updateData.images = finalImages; // can be []
   }
 
@@ -178,8 +192,29 @@ const updateProduct = asyncHandler(async (req, res) => {
     runValidators: true,
   });
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+  // Delete any Cloudinary images that were removed in this update.
+  // Only runs when the update actually changed the image list, so a
+  // name/price-only update can never delete still-referenced images.
+  // (uploadToCloudinary.delete safely ignores non-Cloudinary URLs.)
+  const removedImages = imagesWereUpdated
+    ? (existingProduct.images || []).filter(
+        (image) => !finalImages.includes(image)
+      )
+    : [];
+
+  if (removedImages.length > 0) {
+    const results = await Promise.allSettled(
+      removedImages.map((url) => uploadToCloudinary.delete(url))
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(
+          `Failed to delete product image ${removedImages[index]}:`,
+          result.reason?.message || result.reason
+        );
+      }
+    });
   }
 
   await invalidateProductCache(id);
@@ -225,7 +260,7 @@ const getRelatedProducts = asyncHandler(async (req, res) => {
       const keywords = product.name
         .split(" ")
         .filter((word) => word.length > 3)
-        .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+        .map((word) => escapeRegex(word));
 
       const titleRegex =
         keywords.length > 0 ? new RegExp(keywords.join("|"), "i") : null;

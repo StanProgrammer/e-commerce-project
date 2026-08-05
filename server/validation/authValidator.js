@@ -31,6 +31,7 @@ const registerSchema = Joi.object({
 const loginSchema = Joi.object({
   email: Joi.string().trim().lowercase().email().required(),
   password: Joi.string().required(),
+  remember: Joi.boolean().optional(),
 });
 
 const googleLoginSchema = Joi.object({

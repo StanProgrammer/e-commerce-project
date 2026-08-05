@@ -57,6 +57,7 @@ const config = {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   resendApiKey: process.env.RESEND_API_KEY,
   contactToEmail: process.env.CONTACT_TO_EMAIL,

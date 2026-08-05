@@ -74,6 +74,7 @@ const deleteProductSchema = Joi.object({
 const getAllProductsQuerySchema = Joi.object({
   category: Joi.string().optional(),
   color: Joi.string().optional(),
+  search: Joi.string().trim().max(100).optional(),
   minPrice: Joi.number().positive().optional(),
   maxPrice: Joi.number().positive().optional(),
   page: Joi.number().integer().min(1).optional(),

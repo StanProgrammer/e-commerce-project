@@ -53,7 +53,6 @@ const Navbar = () => {
     { name: "Dashboard", link: "/dashboard" },
     { name: "Profile", link: "/dashboard/profile" },
     { name: "Orders", link: "/dashboard/orders" },
-    { name: "Settings", link: "/dashboard/settings" },
   ];
 
   const renderDropdownMenu = user && user.role === "admin" ? adminDropDownMenu : userDropDownMenu;

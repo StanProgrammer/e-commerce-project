@@ -7,7 +7,7 @@ import MessageState from "../../../components/MessageState";
 import ReviewModal from "../../Shop/reviews/ReviewModal";
 import { getProductPrimaryImage } from "../../../utils/productImage";
 
-const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered", "completed"]);
+const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered"]);
 
 const StarRating = ({ rating }) => {
   return (

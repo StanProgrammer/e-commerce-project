@@ -10,6 +10,13 @@ const UploadImage = ({
 }) => {
   const [preview, setPreview] = useState([]);
   const fileInputRef = useRef(null);
+  // Keep the latest preview list in a ref so effects that revoke blob URLs
+  // (reset / unmount) do not need to re-run whenever preview changes.
+  const previewRef = useRef(preview);
+
+  useEffect(() => {
+    previewRef.current = preview;
+  }, [preview]);
 
   const MAX_SIZE = 10 * 1024 * 1024;
   const MAX_FILES = 5;
@@ -25,11 +32,12 @@ const UploadImage = ({
   // Reset from parent
   useEffect(() => {
     if (resetTrigger) {
-      preview.forEach((url) => {
+      previewRef.current.forEach((url) => {
         if (url.startsWith("blob:")) {
           URL.revokeObjectURL(url);
         }
       });
+      previewRef.current = [];
 
       setPreview([]);
 
@@ -42,7 +50,7 @@ const UploadImage = ({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      preview.forEach((url) => {
+      previewRef.current.forEach((url) => {
         if (url.startsWith("blob:")) {
           URL.revokeObjectURL(url);
         }

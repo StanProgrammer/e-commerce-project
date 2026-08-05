@@ -6,7 +6,7 @@ const User = require("../models/userModel.js");
 const { default: mongoose } = require("mongoose");
 const { invalidateMany, makeKey } = require("../utils/cache.js");
 
-const reviewableOrderStatuses = ["processing", "shipped", "delivered", "completed"];
+const reviewableOrderStatuses = ["processing", "shipped", "delivered"];
 
 const postReview = asyncHandler(async (req, res) => {
   const { comment, rating, productId } = req.body;
@@ -100,7 +100,9 @@ const getUserReviews = asyncHandler(async (req, res) => {
     return res.status(403).json({ message: "You can only view your own reviews." });
   }
 
-  const reviews = await Review.find({ userId }).sort({ createdAt: -1 });
+  const reviews = await Review.find({ userId })
+    .populate("productId", "name images")
+    .sort({ createdAt: -1 });
 
   // Always return 200
   return res.status(200).json(reviews);

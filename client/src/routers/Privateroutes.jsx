@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useLocation } from 'react-router-dom';
@@ -10,6 +10,14 @@ const Privateroutes = ({children,role}) => {
     const dispatch = useDispatch();
     const location = useLocation();
     const [isVerifyingSession, setIsVerifyingSession] = useState(true);
+
+    // Keep the latest user in a ref so the verify effect below does not
+    // depend on the changing `user` value (avoiding re-verification loops).
+    const userRef = useRef(user);
+
+    useEffect(() => {
+      userRef.current = user;
+    }, [user]);
 
     useEffect(() => {
       let cancelled = false;
@@ -25,14 +33,14 @@ const Privateroutes = ({children,role}) => {
 
           if (response.ok && data.isAuthenticated && data.user) {
             dispatch(setUser(data.user));
-          } else if (user) {
+          } else if (userRef.current) {
             dispatch(logout());
           } else {
             dispatch(markAuthChecked());
           }
         } catch {
           if (!cancelled) {
-            dispatch(user ? logout() : markAuthChecked());
+            dispatch(userRef.current ? logout() : markAuthChecked());
           }
         } finally {
           if (!cancelled) {

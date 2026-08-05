@@ -89,7 +89,7 @@ const apiLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: "You are sending requests too quickly. Please wait a moment and try again.",
-  skip: (req) => req.path === "/health",
+  skip: (req) => req.path === "/health" || req.path === "/orders/webhook",
 });
 
 const authLimiter = createRateLimiter({

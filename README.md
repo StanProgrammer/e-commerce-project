@@ -117,6 +117,7 @@ CORS_ORIGINS=
 COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
 STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
@@ -222,6 +223,26 @@ When Redis is enabled and connected, the response includes:
 
 Cached API responses include an `X-Cache` header (`HIT`, `MISS`, `SKIP`, or `BYPASS`) and the server logs cache hits, misses, writes, Redis errors, and invalidation counts with a `[cache]` prefix. Product, blog, review, and policy writes invalidate the relevant cached read paths immediately.
 
+## Stripe Webhook Setup
+
+Orders are recorded when a checkout session is paid. To guarantee orders are saved even if the browser redirect back to the store fails (e.g. the page closes right after payment), configure Stripe to deliver webhook events to the server:
+
+```text
+POST /api/orders/webhook
+```
+
+1. Open the Stripe Dashboard → **Developers → Webhooks** and add an endpoint pointing to `https://<your-server-domain>/api/orders/webhook`.
+2. Subscribe it to the **`checkout.session.completed`** event.
+3. Copy the generated signing secret (`whsec_...`) into `STRIPE_WEBHOOK_SECRET` in the server environment.
+
+For local development, use the Stripe CLI to forward events instead:
+
+```bash
+stripe listen --forward-to localhost:5000/api/orders/webhook
+```
+
+The CLI prints a `whsec_...` secret; put it in `STRIPE_WEBHOOK_SECRET` in `server/.env` and test by triggering a checkout. The webhook handler verifies the `Stripe-Signature` header against the secret and records the order idempotently, so it is safe for Stripe's automatic retries and duplicate deliveries.
+
 ## Available Scripts
 
 ### Client
@@ -283,6 +304,7 @@ PASSWORD_RESET_CLIENT_URL=https://your-client-domain
 COOKIE_SECURE=true
 COOKIE_SAME_SITE=none
 STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
 CLOUDINARY_CLOUD_NAME
 CLOUDINARY_API_KEY
 CLOUDINARY_API_SECRET

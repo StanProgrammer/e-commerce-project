@@ -2,6 +2,13 @@ const jwt = require("jsonwebtoken");
 const { config, requireEnv } = require("../config/env");
 const User = require("../models/userModel");
 
+// Derive the default cookie lifetime from the JWT expiry (e.g. "7d" -> 7 days)
+// so the cookie never outlives the token.
+const parseDaysFromExpiry = (value) => {
+  const match = String(value || "").match(/^(\d+)d$/i);
+  return match ? Number(match[1]) : 7;
+};
+
 const buildCookieOptions = () => {
   const sameSite = String(config.cookie.sameSite || "lax").toLowerCase();
   const secure = config.cookie.secure || sameSite === "none";
@@ -9,7 +16,7 @@ const buildCookieOptions = () => {
     httpOnly: true,
     secure,
     sameSite,
-    maxAge: 1000 * 60 * 60 * 24 * 7,
+    maxAge: 1000 * 60 * 60 * 24 * parseDaysFromExpiry(config.jwtExpires),
   };
 
   if (config.cookie.domain) {
@@ -28,7 +35,7 @@ const clearCookieOptions = {
 };
 delete clearCookieOptions.maxAge;
 
-const generateToken = (user) => {
+const generateToken = (user, expiresIn = config.jwtExpires) => {
   requireEnv([["JWT_SECRET", config.jwtSecret]], "authentication");
 
   const payload = {
@@ -36,7 +43,7 @@ const generateToken = (user) => {
   };
 
   return jwt.sign(payload, config.jwtSecret, {
-    expiresIn: config.jwtExpires,
+    expiresIn,
   });
 };
 

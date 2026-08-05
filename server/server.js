@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const productRoutes = require('./routes/productRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const orderCtrls = require('./controllers/orderCtrls');
 const statsRoutes = require('./routes/statsRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const blogRoutes = require('./routes/blogRoutes');
@@ -91,11 +92,6 @@ app.use('/api', (req, res, next) => {
 
 app.use('/api', apiLimiter);
 
-// --- Body parsers (must come before routes) ---
-app.use(express.json({ limit: '30mb' }));
-app.use(express.urlencoded({ extended: true, limit: '30mb' }));
-app.use(cookieParser());
-
 let appInitPromise = null;
 
 const initializeApp = async () => {
@@ -131,7 +127,21 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
-// --- Routes ---z
+// Stripe webhook: needs the raw request body for signature verification, so
+// it is mounted before the JSON body parser. It runs after the DB-init
+// middleware above so orders can be recorded in all deployment modes.
+app.post(
+  '/api/orders/webhook',
+  express.raw({ type: 'application/json', limit: '2mb' }),
+  orderCtrls.stripeWebhook
+);
+
+// --- Body parsers (must come before routes) ---
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+app.use(cookieParser());
+
+// --- Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);

@@ -20,9 +20,15 @@ const OrderDetails = () => {
  if (!orderDetails) {
     return <MessageState tone="empty" title="Order details are unavailable" message="Return to your orders page and try opening this order again." className="min-h-[40vh]" />;
   }
+  const STATUS_ORDER = ["pending", "processing", "shipped", "delivered"];
   const isCompleted = (status) => {
-    const statusMap = ["pending", "processing", "shipped", "completed"];
-    return statusMap.indexOf(status) < statusMap.indexOf(orderDetails.status);
+    // A canceled order has no completed steps.
+    if (orderDetails.status === "canceled") return false;
+
+    const currentIndex = STATUS_ORDER.indexOf(orderDetails.status);
+    const stepIndex = STATUS_ORDER.indexOf(status);
+
+    return currentIndex !== -1 && stepIndex !== -1 && stepIndex < currentIndex;
   };
 const isCurrent = (status) => orderDetails.status === status;
   const steps = [
@@ -45,9 +51,9 @@ const isCurrent = (status) => orderDetails.status === status;
       icon: { iconName: "truck-line", bgColor: "blue-800", textColor: "blue-800" },
     },
     {
-      status: "completed",
-      label: "Completed",
-      description: "Your order has been successfully completed.",
+      status: "delivered",
+      label: "Delivered",
+      description: "Your order has been delivered successfully.",
       icon: { iconName: "check-line", bgColor: "green-800", textColor: "green-900" },
     },
   ];

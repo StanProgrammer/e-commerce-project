@@ -5,10 +5,11 @@ import { Link } from "react-router-dom";
 import MessageState from "../../../components/MessageState";
 
 const statusStyles = {
-  completed: "bg-green-100 text-green-700",
+  delivered: "bg-green-100 text-green-700",
+  shipped: "bg-indigo-100 text-indigo-700",
   pending: "bg-yellow-100 text-yellow-700",
   processing: "bg-blue-100 text-blue-700",
-  cancelled: "bg-red-100 text-red-700",
+  canceled: "bg-red-100 text-red-700",
 };
 
 const UserOrders = () => {
@@ -36,15 +37,9 @@ const UserOrders = () => {
       <div className="max-w-6xl mx-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">
-            Your Orders
-          </h2>
-
-          <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 transition">
-            See All
-          </button>
-        </div>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Your Orders
+        </h2>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

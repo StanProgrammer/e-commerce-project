@@ -11,10 +11,17 @@ const TimeStep = ({
     pending: "bg-red-500",
     processing: "bg-blue-500",
     shipped: "bg-indigo-500",
+    delivered: "bg-green-600",
+    canceled: "bg-red-500",
     completed: "bg-green-600",
   };
 
   const active = isCompleted || isCurrent;
+
+  const stepTime =
+    orderDetails?.statusHistory?.find((entry) => entry.status === step.status)?.time ||
+    orderDetails?.updatedAt ||
+    "";
 
   return (
     <div className="relative flex-1 flex flex-col items-center">
@@ -74,9 +81,7 @@ const TimeStep = ({
         </div>
 
         <time className="block mt-1 text-sm text-gray-400">
-          {orderDetails.updatedAt
-            ? new Date(orderDetails.updatedAt).toLocaleString()
-            : ""}
+          {stepTime ? new Date(stepTime).toLocaleString() : ""}
         </time>
 
         <p

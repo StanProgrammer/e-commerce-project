@@ -1,11 +1,12 @@
 import React,{useState} from "react";
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import { clearCart } from "../../store/features/cart/cartSlice";
 import getBaseUrl from "../../utils/baseUrl";
+import getApiErrorMessage from "../../utils/getApiErrorMessage";
 const OrderSummary = () => {
   const [redirecting, setRedirecting] = useState(false);
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
   const products = useSelector((state) => state.cart.products);
   const clearTheCart = () => {
     // dispatch action to clear the cart
@@ -38,7 +39,7 @@ const handleCheckout = async () => {
     window.location.href = session.url;
   } catch (error) {
     console.error("Checkout failed:", error);
-    alert(error.message || "Checkout could not be started. Please try again.");
+    toast.error(getApiErrorMessage(error, "Checkout could not be started. Please try again."));
     setRedirecting(false);
   }
 };
