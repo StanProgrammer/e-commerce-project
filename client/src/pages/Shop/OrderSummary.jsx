@@ -1,54 +1,45 @@
-import React,{useState} from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { clearCart } from "../../store/features/cart/cartSlice";
-import getBaseUrl from "../../utils/baseUrl";
+import { useCreateCheckoutSessionMutation } from "../../store/features/orders/orderApi";
 import getApiErrorMessage from "../../utils/getApiErrorMessage";
+
 const OrderSummary = () => {
   const [redirecting, setRedirecting] = useState(false);
   const dispatch = useDispatch();
   const products = useSelector((state) => state.cart.products);
+  const [createCheckoutSession] = useCreateCheckoutSessionMutation();
+
   const clearTheCart = () => {
     // dispatch action to clear the cart
     dispatch(clearCart());
   };
 
   //payment integration
-const handleCheckout = async () => {
-  try {
-    setRedirecting(true);
-    
-    const response = await fetch(
-      `${getBaseUrl()}/api/orders/checkout-session`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          products,
-        }),
+  const handleCheckout = async () => {
+    try {
+      setRedirecting(true);
+
+      const session = await createCheckoutSession({ products }).unwrap();
+
+      if (!session?.url) {
+        throw new Error("Stripe checkout could not be started.");
       }
-    );
 
-    const session = await response.json().catch(() => ({}));
-
-    if (!response.ok || !session?.url) {
-      throw new Error(session?.message || "Stripe checkout could not be started.");
+      window.location.href = session.url;
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      toast.error(getApiErrorMessage(error, "Checkout could not be started. Please try again."));
+      setRedirecting(false);
     }
-
-    window.location.href = session.url;
-  } catch (error) {
-    console.error("Checkout failed:", error);
-    toast.error(getApiErrorMessage(error, "Checkout could not be started. Please try again."));
-    setRedirecting(false);
-  }
-};
-
+  };
 
   const { tax, taxRate, grandTotal, totalPrice, selectedItems } = useSelector((state) => state.cart);
+
   if (redirecting) {
-  return <div>Redirecting to payment...</div>;
-}
+    return <div>Redirecting to payment...</div>;
+  }
 
   return (
     <div className="bg-primary-light mt-5 rounded text-base">
@@ -71,9 +62,10 @@ const handleCheckout = async () => {
             <span className="mr-2">Clear Cart</span>
             <i className="ri-delete-bin-6-line"></i>
           </button>
-          <button 
-          onClick={handleCheckout}
-          className="bg-green-600 px-3 py-1.5 text-white mt-2 rounded-md flex justify-between items-center mb-4">
+          <button
+            onClick={handleCheckout}
+            className="bg-green-600 px-3 py-1.5 text-white mt-2 rounded-md flex justify-between items-center mb-4"
+          >
             <span className="mr-2">Proceed To Checkout</span>
             <i className="ri-shopping-cart-2-line"></i>
           </button>

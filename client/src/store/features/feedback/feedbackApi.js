@@ -9,6 +9,14 @@ export const feedbackApi = createApi({
   }),
   tagTypes: ["Feedback"],
   endpoints: (builder) => ({
+    submitFeedback: builder.mutation({
+      query: (body) => ({
+        url: "/",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Feedback"],
+    }),
     getMyFeedback: builder.query({
       query: () => ({
         url: "/me",
@@ -36,6 +44,7 @@ export const feedbackApi = createApi({
 });
 
 export const {
+  useSubmitFeedbackMutation,
   useGetMyFeedbackQuery,
   useGetAllFeedbackQuery,
   useUpdateFeedbackStatusMutation,

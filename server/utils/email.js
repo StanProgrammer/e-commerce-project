@@ -105,6 +105,84 @@ const sendPasswordResetEmail = async ({ to, resetUrl, username }) => {
   }
 };
 
+const formatAmount = (amount) => `$${Number(amount || 0).toFixed(2)}`;
+
+const sendOrderConfirmationEmail = async ({ to, orderId, amount }) => {
+  const { user } = getEmailConfig();
+  const transporter = createTransporter();
+  const from = `"Willow & Rue" <${user}>`;
+  const safeOrderId = escapeHtml(orderId || "");
+  const safeAmount = formatAmount(amount);
+
+  const message = {
+    from,
+    to,
+    subject: `Your Willow & Rue order is confirmed (${orderId})`,
+    text: [
+      "Hi there,",
+      "",
+      `Thank you for your order ${orderId}.`,
+      `Total charged: ${safeAmount}`,
+      "",
+      "We are preparing your items and will email you again when they ship.",
+      "",
+      "Willow & Rue",
+    ].join("\n"),
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+        <h2 style="margin-bottom: 12px;">Order confirmed</h2>
+        <p>Thank you for your order <strong>${safeOrderId}</strong>.</p>
+        <p>Total charged: <strong>${safeAmount}</strong></p>
+        <p>We are preparing your items and will email you again when they ship.</p>
+      </div>
+    `,
+  };
+
+  try {
+    await sendMailWithTimeout(transporter, message);
+  } finally {
+    transporter.close();
+  }
+};
+
+const sendOrderStatusEmail = async ({ to, orderId, status }) => {
+  const { user } = getEmailConfig();
+  const transporter = createTransporter();
+  const from = `"Willow & Rue" <${user}>`;
+  const safeOrderId = escapeHtml(orderId || "");
+  const statusLabel = String(status || "").charAt(0).toUpperCase() + String(status || "").slice(1);
+
+  const message = {
+    from,
+    to,
+    subject: `Order ${statusLabel.toLowerCase()}: ${orderId}`,
+    text: [
+      `Hi there,`,
+      "",
+      `Your order ${orderId} is now ${status}.`,
+      "",
+      "Track the latest status any time from your account dashboard.",
+      "",
+      "Willow & Rue",
+    ].join("\n"),
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+        <h2 style="margin-bottom: 12px;">Order ${statusLabel.toLowerCase()}</h2>
+        <p>Your order <strong>${safeOrderId}</strong> is now <strong>${statusLabel}</strong>.</p>
+        <p>Track the latest status any time from your account dashboard.</p>
+      </div>
+    `,
+  };
+
+  try {
+    await sendMailWithTimeout(transporter, message);
+  } finally {
+    transporter.close();
+  }
+};
+
 module.exports = {
   sendPasswordResetEmail,
+  sendOrderConfirmationEmail,
+  sendOrderStatusEmail,
 };

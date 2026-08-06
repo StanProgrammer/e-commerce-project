@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useGetReviewsByUserIdQuery } from "../../../store/features/reviews/reviewsApi";
-import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
+import { useGetMyOrdersQuery } from "../../../store/features/orders/orderApi";
 import { useNavigate } from "react-router-dom";
 import MessageState from "../../../components/MessageState";
 import ReviewModal from "../../Shop/reviews/ReviewModal";
@@ -49,8 +49,8 @@ const UserReviews = () => {
     data: orders = [],
     isLoading: isOrdersLoading,
     isError: isOrdersError,
-  } = useGetOrdersByEmailQuery(user?.email ?? "", {
-    skip: !user?.email,
+  } = useGetMyOrdersQuery(undefined, {
+    skip: !user,
   });
 
   const productsById = new Map();

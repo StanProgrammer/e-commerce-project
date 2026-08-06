@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import getApiErrorMessage from "../utils/getApiErrorMessage";
-import getBaseUrl from "../utils/baseUrl";
-import { feedbackApi } from "../store/features/feedback/feedbackApi";
+import { useSubmitFeedbackMutation } from "../store/features/feedback/feedbackApi";
 
 const FEEDBACK_TYPES = {
   bug: {
@@ -106,8 +105,8 @@ const getPanelAdjustedPosition = (position) => {
 };
 
 const FeedbackWidget = () => {
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const [submitFeedback] = useSubmitFeedbackMutation();
   const widgetRef = useRef(null);
   const dragState = useRef(null);
   const dragMoved = useRef(false);
@@ -329,29 +328,15 @@ const FeedbackWidget = () => {
     setSubmitStatus("idle");
 
     try {
-      const response = await fetch(`${getBaseUrl()}/api/feedback`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          type: activeType,
-          title: currentForm.title,
-          description: currentForm.description,
-          pageUrl: window.location.href,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw data;
-      }
+      await submitFeedback({
+        type: activeType,
+        title: currentForm.title,
+        description: currentForm.description,
+        pageUrl: window.location.href,
+      }).unwrap();
 
       setSubmitStatus("success");
-      setSubmittedMessage(data.message || "Feedback submitted successfully.");
-      dispatch(feedbackApi.util.invalidateTags(["Feedback"]));
+      setSubmittedMessage("Feedback submitted successfully.");
       setFormData((current) => ({
         ...current,
         [activeType]: { title: "", description: "" },

@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { useGetAdminStatsQuery } from '../../../store/features/stats/statsApi'
 import AdminStats from './manageProduct/AdminStats'
 import { useSelector } from 'react-redux'
-import AdminStatsChart from './AdminStatsChart'
 import MessageState from '../../../components/MessageState'
+
+// Chart.js is heavy — load it only when the admin dashboard actually renders.
+const AdminStatsChart = lazy(() => import('./AdminStatsChart'))
 
 const AdminMain = () => {
     const { user } = useSelector((state) => state.auth)
@@ -23,7 +25,16 @@ if (!stats) {
             <h1 className='text-2xl font-semibold mb-4'>Admin Dashboard</h1>
             <p className='text-gray-500'>Hi {user?.username}! Welcome to your Admin Dashboard.</p>
             <AdminStats stats={stats} />
-            <AdminStatsChart stats={stats} />
+            <Suspense
+              fallback={
+                <div className="mt-10 flex items-center justify-center gap-3 text-sm font-medium text-slate-500">
+                  <i className="ri-loader-4-line animate-spin text-xl text-primary" aria-hidden="true"></i>
+                  Loading charts…
+                </div>
+              }
+            >
+              <AdminStatsChart stats={stats} />
+            </Suspense>
         </div>
     </div>
   )

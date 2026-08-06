@@ -57,13 +57,20 @@ const authApi = createApi({
         method: "POST",
       }),
     }),
-    getUserProfile: builder.query({
+    getMe: builder.query({
       query: () => ({
-        url: "user",
+        url: "auth/me",
         method: "GET",
       }),
+    }),
+    getUserProfile: builder.query({
+      query: (args = {}) => ({
+        url: "user",
+        method: "GET",
+        params: args,
+      }),
       refetchOnMountOrArgChange: true,
-      invalidatesTags: ["User"],
+      providesTags: ["User"],
     }),
     deleteUserAccount: builder.mutation({
       query: (userId) => ({
@@ -116,6 +123,7 @@ export const {
   useUpdateUserProfileMutation,
   useDeleteUserAccountMutation,
   useLogoutUserMutation,
+  useGetMeQuery,
   useGetUserProfileQuery,
   useEditProfileMutation,
   useUpdateProfileWithAvatarMutation,

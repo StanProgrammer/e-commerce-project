@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import getBaseUrl from "../../utils/baseUrl";
+import { useSendContactMessageMutation } from "../../store/features/contact/contactApi";
+import getApiErrorMessage from "../../utils/getApiErrorMessage";
 
 const contactHighlights = [
   {
@@ -24,15 +25,18 @@ const contactHighlights = [
   },
 ];
 
+const emptyForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
 const ContactPage = () => {
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [form, setForm] = useState(emptyForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendContactMessage] = useSendContactMessageMutation();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -47,31 +51,14 @@ const ContactPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${getBaseUrl()}/api/contact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const validationMessage = data?.details?.[0]?.message;
-        throw new Error(validationMessage || data?.message || "Unable to send your message right now.");
-      }
+      await sendContactMessage(form).unwrap();
 
       toast.success("Message sent successfully.");
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        subject: "",
-        message: "",
-      });
+      setForm(emptyForm);
     } catch (error) {
-      toast.error(error.message || "Something went wrong while sending the message.");
+      toast.error(
+        getApiErrorMessage(error, "Something went wrong while sending the message.")
+      );
     } finally {
       setIsSubmitting(false);
     }

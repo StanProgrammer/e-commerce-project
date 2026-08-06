@@ -30,6 +30,10 @@ const ProductPage = () => {
       ? Math.round((savings / Number(singleProduct.oldPrice)) * 100)
       : 0;
 
+  const tracksStock =
+    singleProduct.stock !== undefined && singleProduct.stock !== null;
+  const isOutOfStock = tracksStock && Number(singleProduct.stock) <= 0;
+
   const formatPrice = (value) => {
     if (value === undefined || value === null || value === "") {
       return null;
@@ -235,6 +239,26 @@ const ProductPage = () => {
               ) : null}
             </div>
 
+            {tracksStock ? (
+              <div
+                className={`mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+                  isOutOfStock
+                    ? "bg-red-50 text-red-600"
+                    : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                <i
+                  className={
+                    isOutOfStock ? "ri-close-circle-line" : "ri-checkbox-circle-line"
+                  }
+                  aria-hidden="true"
+                ></i>
+                {isOutOfStock
+                  ? "Out of stock"
+                  : `${Number(singleProduct.stock)} available in stock`}
+              </div>
+            ) : null}
+
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="flex w-full items-center justify-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 sm:w-auto sm:justify-start">
                 <Ratings rating={singleProduct.rating} />
@@ -268,14 +292,15 @@ const ProductPage = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <button
-                className="btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 sm:w-auto"
+                className="btn inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isOutOfStock}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAddToCart(singleProduct);
                 }}
               >
                 <i className="ri-shopping-bag-3-line"></i>
-                Add to Cart
+                {isOutOfStock ? "Out of Stock" : "Add to Cart"}
               </button>
 
               <Link

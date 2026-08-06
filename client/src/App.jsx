@@ -1,46 +1,24 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import FeedbackWidget from "./components/FeedbackWidget";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { markAuthChecked, setUser } from "./store/features/auth/authSlice";
-import getBaseUrl from "./utils/baseUrl";
+import PageSuspense from "./components/PageSuspense";
+import { useAuthSession } from "./store/features/auth/useAuthSession";
 
 function App() {
-  const dispatch = useDispatch();
-
- useEffect(() => {
-  const checkAuth = async () => {
-    try {
-      const res = await fetch(`${getBaseUrl()}/api/auth/me`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) throw new Error("Not authenticated");
-      const data = await res.json();
-
-      if (data.isAuthenticated && data.user) {
-        dispatch(setUser(data.user));
-      } else {
-        dispatch(markAuthChecked());
-      }
-
-    } catch {
-      dispatch(markAuthChecked());
-    }
-  };
-
-  checkAuth();
-}, [dispatch]);
+  // Verifies the session once; protected routes reuse this single request.
+  useAuthSession();
 
   return (
     <>
       <Navbar />
       <ScrollToTop />
-      <Outlet />
+      <Suspense fallback={<PageSuspense />}>
+        <Outlet />
+      </Suspense>
       <FeedbackWidget />
       <Footer />
     </>

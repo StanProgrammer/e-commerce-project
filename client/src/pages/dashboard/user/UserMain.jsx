@@ -10,7 +10,9 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const UserMain = () => {
   const { user } = useSelector((state) => state.auth);
-  const { data: stats, isLoading, isError } = useGetUserStatsQuery(user?.email);
+  const { data: stats, isLoading, isError } = useGetUserStatsQuery(undefined, {
+    skip: !user,
+  });
 
   if (isLoading) {
     return (

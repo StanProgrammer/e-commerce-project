@@ -30,6 +30,9 @@ const DEFAULT_OPTIONS = {
   resource_type: "auto",
   invalidate: true,
   folder: "uploads", // optional but recommended
+  // Deliver optimized images by default: cap the long edge, strip metadata,
+  // and let Cloudinary pick the best compression level for each format.
+  transformation: [{ width: 1400, crop: "limit", quality: "auto" }],
 };
 
 /**

@@ -33,6 +33,13 @@ const productSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Inventory count. When absent/undefined the product is treated as
+    // unlimited stock so existing catalog items keep working unchanged.
+    stock: {
+      type: Number,
+      min: 0,
+    },
+
     images: {
   type: [String],
   required: true,

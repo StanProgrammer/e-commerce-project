@@ -2,75 +2,60 @@ import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { clearCart } from "../store/features/cart/cartSlice";
-import getBaseUrl from "../utils/baseUrl";
+import { useConfirmPaymentMutation } from "../store/features/orders/orderApi";
 import TimeStep from "./TimeStep";
 import MessageState from "./MessageState";
-
-const PAYMENT_CONFIRMATION_TIMEOUT_MS = 45000;
 
 const PaymentSuccess = () => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const dispatch = useDispatch();
+  const [confirmPayment] = useConfirmPaymentMutation();
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const sessionId = queryParams.get("session_id");
+
     if (!sessionId) {
       setStatusMessage("Payment session is missing. Return to your orders page to confirm your order status.");
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, PAYMENT_CONFIRMATION_TIMEOUT_MS);
+    let cancelled = false;
 
-    if (sessionId) {
-      fetch(`${getBaseUrl()}/api/orders/confirm-payment`, {
-        method: "POST",
-        credentials: "include",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ sessionId })
+    confirmPayment({ sessionId })
+      .unwrap()
+      .then((data) => {
+        if (cancelled) return;
 
+        if (!data?.order) {
+          throw new Error("Order details were not returned.");
+        }
+
+        setOrderDetails(data.order);
+        dispatch(clearCart());
       })
-        .then(async (response) => {
-          const data = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            throw new Error(data?.message || "Payment confirmation failed.");
-          }
-          return data;
-        })
-        .then((data) => {
-          if (!data?.order) {
-            throw new Error("Order details were not returned.");
-          }
-          setOrderDetails(data.order);
-          if (data?.order) {
-            dispatch(clearCart());
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching order details:", error);
-          const message =
-            error.name === "AbortError"
-              ? "The payment provider took too long to respond. Your payment may still be processing. Check your orders page in a moment."
-              : error.message || "Payment was received, but we could not load the order details. Check your orders page for the latest status.";
-          setStatusMessage(message);
-        })
-        .finally(() => {
-          clearTimeout(timeoutId);
-        });
-    }
+      .catch((error) => {
+        if (cancelled) return;
+
+        const timedOut =
+          error?.status === "TIMEOUT_ERROR" ||
+          error?.status === "FETCH_ERROR";
+
+        const message = timedOut
+          ? "The payment provider took too long to respond. Your payment may still be processing. Check your orders page in a moment."
+          : error?.data?.message ||
+            error?.message ||
+            "Payment was received, but we could not load the order details. Check your orders page for the latest status.";
+
+        setStatusMessage(message);
+      });
 
     return () => {
-      clearTimeout(timeoutId);
-      controller.abort();
+      cancelled = true;
     };
-  }, [dispatch]);
+  }, [confirmPayment, dispatch]);
+
   if (statusMessage) {
     return (
       <MessageState
@@ -95,6 +80,7 @@ const PaymentSuccess = () => {
   if (!orderDetails) {
     return <MessageState tone="loading" title="Confirming your payment" message="Please wait while we verify your payment and prepare your order details." className="section__container" />;
   }
+
   const isCompleted = (status) => {
     // A canceled order has no completed steps.
     if (orderDetails.status === "canceled") return false;
@@ -102,7 +88,9 @@ const PaymentSuccess = () => {
     const statusMap = ["pending", "processing", "shipped", "delivered"];
     return statusMap.indexOf(status) < statusMap.indexOf(orderDetails.status);
   };
-const isCurrent = (status) => orderDetails.status === status;
+
+  const isCurrent = (status) => orderDetails.status === status;
+
   const steps = [
     {
       status: "pending",
@@ -129,25 +117,24 @@ const isCurrent = (status) => orderDetails.status === status;
       icon: { iconName: "check-line", bgColor: "green-800", textColor: "green-900" },
     },
   ];
-  
+
   return (
     <section className="section__container rounded-lg bg-white p-6 shadow-md">
       <h2 className="text-2xl font-bold mb-4 text-green-800">Payment {orderDetails?.status}</h2>
       <p className="text-gray-700 mb-6">Order ID: {orderDetails?.orderId}</p>
       <p className="text-gray-600 mb-4">Status: {orderDetails?.status}</p>
-     <ol className="flex flex-col sm:flex-row items-start sm:items-center justify-between relative">
-  {steps.map((step, index) => (
-    <TimeStep
-      key={index}
-      step={step}
-      orderDetails={orderDetails}
-      isCompleted={isCompleted(step.status)}
-      isCurrent={isCurrent(step.status)}
-      isLastStep={index === steps.length - 1}
-    />
-  ))}
-</ol>
-
+      <ol className="flex flex-col sm:flex-row items-start sm:items-center justify-between relative">
+        {steps.map((step, index) => (
+          <TimeStep
+            key={index}
+            step={step}
+            orderDetails={orderDetails}
+            isCompleted={isCompleted(step.status)}
+            isCurrent={isCurrent(step.status)}
+            isLastStep={index === steps.length - 1}
+          />
+        ))}
+      </ol>
     </section>
   );
 };

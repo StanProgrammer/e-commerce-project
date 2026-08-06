@@ -8,14 +8,21 @@ import {
 } from "../../../../store/features/auth/authApi";
 import toast from "react-hot-toast";
 import MessageState from "../../../../components/MessageState";
+import Pagination from "../../../../components/Pagination";
 import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
 const ManageUser = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [page, setPage] = useState(1);
 
-  const { data, error, isLoading, refetch } = useGetUserProfileQuery();
+  const { data, error, isLoading, refetch } = useGetUserProfileQuery({
+    page,
+    limit: 10,
+  });
   const users = data?.users || [];
+  const totalUsers = data?.totalUsers || 0;
+  const totalPages = data?.totalPages || 1;
 
   const [deleteUser, { isLoading: isDeleting }] =
     useDeleteUserAccountMutation();
@@ -57,7 +64,7 @@ const ManageUser = () => {
           {/* Stats */}
           <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
             <span className="text-sm text-gray-600">
-              Total users: <span className="font-semibold">{users.length}</span>
+              Total users: <span className="font-semibold">{totalUsers}</span>
             </span>
           </div>
 
@@ -148,6 +155,17 @@ const ManageUser = () => {
             </table>
           </div>
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => {
+            if (nextPage >= 1 && nextPage <= totalPages) {
+              setPage(nextPage);
+            }
+          }}
+        />
 
         {/* Modal */}
         {isModalOpen && (

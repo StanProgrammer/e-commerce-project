@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import reviewAvatar from "../../../assets/avatar.png";
 import Ratings from "../../../components/Ratings";
 import ReviewModal from "./ReviewModal";
-import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
+import { useGetMyOrdersQuery } from "../../../store/features/orders/orderApi";
 
 const reviewableOrderStatuses = new Set(["processing", "shipped", "delivered"]);
 
@@ -13,8 +13,8 @@ const ReviewCard = ({ productReviews = [] }) => {
   const { user } = useSelector((state) => state.auth);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: orders = [] } = useGetOrdersByEmailQuery(user?.email ?? "", {
-    skip: !user?.email,
+  const { data: orders = [] } = useGetMyOrdersQuery(undefined, {
+    skip: !user,
   });
 
   const hasPurchasedProduct = orders.some(

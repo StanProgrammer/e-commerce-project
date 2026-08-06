@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { useGetOrdersByEmailQuery } from "../../../store/features/orders/orderApi";
+import { useGetMyOrdersQuery } from "../../../store/features/orders/orderApi";
 import { Link } from "react-router-dom";
 import MessageState from "../../../components/MessageState";
 
@@ -19,8 +19,8 @@ const UserOrders = () => {
     data: orders = [],
     isLoading,
     isError,
-  } = useGetOrdersByEmailQuery(user?.email ?? "", {
-    skip: !user?.email,
+  } = useGetMyOrdersQuery(undefined, {
+    skip: !user,
   });
 
   if (!user) {

@@ -1,189 +1,216 @@
+import { Suspense, lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App.jsx";
-import Home from "../pages/Home/Home.jsx";
-import CategoryPage from "../pages/Category/CategoryPage.jsx";
-import Search from "../pages/Search/Search.jsx";
-import ShopPage from "../pages/Shop/ShopPage.jsx";
-import ProductPage from "../pages/Shop/product/ProductPage.jsx";
-import ContactPage from "../pages/Contact/ContactPage.jsx";
-import Team from "../pages/Team/Team.jsx";
-import Login from "../components/Login.jsx";
-import Register from "../components/Register.jsx";
-import ForgotPassword from "../components/ForgotPassword.jsx";
-import ResetPassword from "../components/ResetPassword.jsx";
-import PaymentSuccess from "../components/PaymentSuccess.jsx";
-import Dashboard from "../pages/dashboard/Dashboard.jsx";
+import PageSuspense from "../components/PageSuspense";
 import Privateroutes from "./Privateroutes.jsx";
-import DashboardOrders from "./DashboardOrders.jsx";
-import UserMain from "../pages/dashboard/user/UserMain.jsx";
-import OrderDetails from "../pages/dashboard/user/OrderDetails.jsx";
-import UserPayments from "../pages/dashboard/user/UserPayments.jsx";
-import UserReviews from "../pages/dashboard/user/UserReviews.jsx";
-import UserProfile from "../pages/dashboard/user/UserProfile.jsx";
-import UserFeedback from "../pages/dashboard/user/UserFeedback.jsx";
-import AdminMain from "../pages/dashboard/admin/AdminMain.jsx";
-import ManageFeedback from "../pages/dashboard/admin/ManageFeedback.jsx";
-import AddProduct from "../pages/dashboard/admin/addProduct/AddProduct.jsx";
-import ManageProducts from "../pages/dashboard/admin/manageProduct/ManageProducts.jsx";
-import UpdateProduct from "../pages/dashboard/admin/manageProduct/UpdateProduct.jsx";
-import ManageUsers from "../pages/dashboard/admin/users/ManageUsers.jsx";
-import ManageOrders from "../pages/dashboard/admin/manageOrders/ManageOrders.jsx";
-import BlogsPage from "../pages/Blog/BlogsPage.jsx";
-import BlogDetails from "../pages/Blog/BlogDetails.jsx";
-import AddBlog from "../pages/dashboard/admin/blogs/AddBlog.jsx";
-import ManageBlogs from "../pages/dashboard/admin/blogs/ManageBlogs.jsx";
-import UpdateBlog from "../pages/dashboard/admin/blogs/UpdateBlog.jsx";
-import PolicyPage from "../pages/Policy/PolicyPage.jsx";
-import ManagePolicy from "../pages/dashboard/admin/policy/ManagePolicy.jsx";
 
-const router = createBrowserRouter ([
+// Wraps a lazy page in its own Suspense boundary so routes that render
+// outside <App> (login, register, ...) also get a loading fallback.
+const lazyElement = (importer) => {
+  const Component = lazy(importer);
+
+  return (
+    <Suspense fallback={<PageSuspense />}>
+      <Component />
+    </Suspense>
+  );
+};
+
+const router = createBrowserRouter([
   {
     path: "/",
-    element: <App/>,
+    element: <App />,
     children: [
       {
         path: "/",
-        element: <Home/>,
+        element: lazyElement(() => import("../pages/Home/Home.jsx")),
       },
       {
-        path:"/category/:categoryName",
-        element:<CategoryPage/>,
+        path: "/category/:categoryName",
+        element: lazyElement(() => import("../pages/Category/CategoryPage.jsx")),
       },
       {
         path: "/search",
-        element: <Search/>,
+        element: lazyElement(() => import("../pages/Search/Search.jsx")),
       },
       {
         path: "/shop",
-        element: <ShopPage/>,
+        element: lazyElement(() => import("../pages/Shop/ShopPage.jsx")),
       },
       {
         path: "/contact",
-        element: <ContactPage/>,
+        element: lazyElement(() => import("../pages/Contact/ContactPage.jsx")),
       },
       {
         path: "/blogs",
-        element: <BlogsPage/>,
+        element: lazyElement(() => import("../pages/Blog/BlogsPage.jsx")),
       },
       {
         path: "/blogs/:slug",
-        element: <BlogDetails/>,
+        element: lazyElement(() => import("../pages/Blog/BlogDetails.jsx")),
       },
       {
         path: "/team",
-        element: <Team/>,
+        element: lazyElement(() => import("../pages/Team/Team.jsx")),
       },
       {
         path: "/policy",
-        element: <PolicyPage/>,
+        element: lazyElement(() => import("../pages/Policy/PolicyPage.jsx")),
       },
       {
-        path:"/shop/:id",
-        element:<ProductPage/>,
+        path: "/shop/:id",
+        element: lazyElement(() => import("../pages/Shop/product/ProductPage.jsx")),
       },
       {
-        path:"checkout-success",
-        element:<PaymentSuccess/>,
+        path: "checkout-success",
+        element: lazyElement(() => import("../components/PaymentSuccess.jsx")),
       },
       {
-        path:"/order/:orderId",
-        element:<OrderDetails/>
-      }
-    ]
+        path: "/order/:orderId",
+        element: lazyElement(() => import("../pages/dashboard/user/OrderDetails.jsx")),
+      },
+    ],
   },
   {
     path: "/login",
-    element:<Login/>
+    element: lazyElement(() => import("../components/Login.jsx")),
   },
   {
     path: "/register",
-    element:<Register/>
+    element: lazyElement(() => import("../components/Register.jsx")),
   },
   {
     path: "/forgot-password",
-    element:<ForgotPassword/>
+    element: lazyElement(() => import("../components/ForgotPassword.jsx")),
   },
   {
     path: "/reset-password/:token",
-    element:<ResetPassword/>
+    element: lazyElement(() => import("../components/ResetPassword.jsx")),
   },
   // dashboard routes
   {
     path: "/dashboard",
-    element: <Privateroutes role="user"><Dashboard/></Privateroutes>,
+    element: (
+      <Privateroutes role="user">
+        {lazyElement(() => import("../pages/dashboard/Dashboard.jsx"))}
+      </Privateroutes>
+    ),
     children: [
       {
         path: "",
-        element: <UserMain/>,
+        element: lazyElement(() => import("../pages/dashboard/user/UserMain.jsx")),
       },
       {
-        path:"orders",
-        element:<DashboardOrders/>
+        path: "orders",
+        element: lazyElement(() => import("./DashboardOrders.jsx")),
       },
       {
-        path:"profile",
-        element:<UserProfile/>
+        path: "profile",
+        element: lazyElement(() => import("../pages/dashboard/user/UserProfile.jsx")),
       },
       {
-        path:"payments",
-        element:<UserPayments/>
+        path: "payments",
+        element: lazyElement(() => import("../pages/dashboard/user/UserPayments.jsx")),
       },
       {
-        path:"reviews",
-        element:<UserReviews/>
+        path: "reviews",
+        element: lazyElement(() => import("../pages/dashboard/user/UserReviews.jsx")),
       },
       {
-        path:"feedback",
-        element:<UserFeedback/>
+        path: "feedback",
+        element: lazyElement(() => import("../pages/dashboard/user/UserFeedback.jsx")),
       },
-
       // admin routes
       {
-        path:"admin",
-        element:<Privateroutes role="admin"><AdminMain/></Privateroutes>
+        path: "admin",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/AdminMain.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"add-product",
-        element:<Privateroutes role="admin"><AddProduct/></Privateroutes>
+        path: "add-product",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/addProduct/AddProduct.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"manage-products",
-        element:<Privateroutes role="admin"><ManageProducts/></Privateroutes>
+        path: "manage-products",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/manageProduct/ManageProducts.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"update-product/:id",
-        element:<Privateroutes role="admin"><UpdateProduct/></Privateroutes>
+        path: "update-product/:id",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/manageProduct/UpdateProduct.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"user-management",
-        element:<Privateroutes role="admin"><ManageUsers/></Privateroutes>
+        path: "user-management",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/users/ManageUsers.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"manage-orders",
-        element:<Privateroutes role="admin"><ManageOrders/></Privateroutes>
+        path: "manage-orders",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/manageOrders/ManageOrders.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"manage-feedback",
-        element:<Privateroutes role="admin"><ManageFeedback/></Privateroutes>
+        path: "manage-feedback",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/ManageFeedback.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"add-blog",
-        element:<Privateroutes role="admin"><AddBlog/></Privateroutes>
+        path: "add-blog",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/blogs/AddBlog.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"manage-blogs",
-        element:<Privateroutes role="admin"><ManageBlogs/></Privateroutes>
+        path: "manage-blogs",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/blogs/ManageBlogs.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"update-blog/:id",
-        element:<Privateroutes role="admin"><UpdateBlog/></Privateroutes>
+        path: "update-blog/:id",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/blogs/UpdateBlog.jsx"))}
+          </Privateroutes>
+        ),
       },
       {
-        path:"manage-policy",
-        element:<Privateroutes role="admin"><ManagePolicy/></Privateroutes>
-      }
-    ]
-  }
+        path: "manage-policy",
+        element: (
+          <Privateroutes role="admin">
+            {lazyElement(() => import("../pages/dashboard/admin/policy/ManagePolicy.jsx"))}
+          </Privateroutes>
+        ),
+      },
+    ],
+  },
 ]);
 
 export default router;

@@ -1,13 +1,13 @@
 import React from 'react'
-import { useGetOrdersByEmailQuery } from '../../../store/features/orders/orderApi';
+import { useGetMyOrdersQuery } from '../../../store/features/orders/orderApi';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import MessageState from '../../../components/MessageState';
 
 const UserPayments = () => {
     const { user } = useSelector((state) => state.auth);
-    const {data:ordersData ,isError,isLoading} = useGetOrdersByEmailQuery(user?.email ?? "", {
-        skip: !user?.email,
+    const {data:ordersData ,isError,isLoading} = useGetMyOrdersQuery(undefined, {
+        skip: !user,
       });
       if(isLoading){
         return <MessageState tone="loading" title="Loading payments" message="We are calculating your latest payment history." className="min-h-[40vh]" />

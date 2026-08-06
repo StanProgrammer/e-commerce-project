@@ -64,6 +64,23 @@ const isCurrent = (status) => orderDetails.status === status;
       <h2 className="text-2xl font-bold mb-4 text-green-800">Payment {orderDetails?.status}</h2>
       <p className="text-gray-700 mb-6">Order ID: {orderDetails?.orderId}</p>
       <p className="text-gray-600 mb-4">Status: {orderDetails?.status}</p>
+
+      {orderDetails.shippingAddress && (
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-widest text-slate-500">Shipping Address</h3>
+          <p className="text-gray-700">{orderDetails.shippingAddress.name}</p>
+          <p className="text-gray-700">
+            {orderDetails.shippingAddress.line1}
+            {orderDetails.shippingAddress.line2 ? `, ${orderDetails.shippingAddress.line2}` : ""}
+          </p>
+          <p className="text-gray-700">
+            {orderDetails.shippingAddress.city}
+            {orderDetails.shippingAddress.state ? `, ${orderDetails.shippingAddress.state}` : ""}
+            {orderDetails.shippingAddress.postalCode ? ` ${orderDetails.shippingAddress.postalCode}` : ""}
+          </p>
+          <p className="uppercase text-gray-700">{orderDetails.shippingAddress.country}</p>
+        </div>
+      )}
      <ol className="flex flex-col sm:flex-row items-start sm:items-center justify-between relative">
   {steps.map((step, index) => (
     <TimeStep

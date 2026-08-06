@@ -7,11 +7,26 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import UpdateOrderModal from "./UpdateOrderModal";
 import MessageState from "../../../../components/MessageState";
+import Pagination from "../../../../components/Pagination";
 import getApiErrorMessage from "../../../../utils/getApiErrorMessage";
 
+const ORDERS_PER_PAGE = 10;
+
+const STATUS_OPTIONS = [
+  { label: "All statuses", value: "" },
+  { label: "Pending", value: "pending" },
+  { label: "Processing", value: "processing" },
+  { label: "Shipped", value: "shipped" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Canceled", value: "canceled" },
+];
+
 const ManageOrders = () => {
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("");
+
   const { data, isLoading, isError, error, refetch } =
-    useGetAllOrdersQuery();
+    useGetAllOrdersQuery({ page, limit: ORDERS_PER_PAGE, status: statusFilter });
 
   const [deleteOrder, { isLoading: isDeleting }] =
     useDeleteOrderMutation();
@@ -19,7 +34,20 @@ const ManageOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const orders = data || [];
+  const orders = data?.orders || [];
+  const totalOrders = data?.totalOrders || 0;
+  const totalPages = data?.totalPages || 1;
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(1);
+  };
+
+  const handlePageChange = (nextPage) => {
+    if (nextPage >= 1 && nextPage <= totalPages) {
+      setPage(nextPage);
+    }
+  };
 
   const handleEditStatus = (order) => {
     setSelectedOrder(order);
@@ -90,13 +118,27 @@ const ManageOrders = () => {
 
   return (
     <div className="section__container p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-5">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
         <h2 className="text-xl sm:text-2xl font-semibold">
           Manage Orders
         </h2>
-        <span className="text-sm text-gray-500">
-          Total: {orders.length}
-        </span>
+        <div className="flex items-center gap-3">
+          <select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
+            aria-label="Filter orders by status"
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value || "all"} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <span className="text-sm text-gray-500">
+            Total: {totalOrders}
+          </span>
+        </div>
       </div>
 
       {/* ---------------- Empty State ---------------- */}
@@ -104,7 +146,7 @@ const ManageOrders = () => {
         <div className="text-center py-10 border rounded-lg bg-gray-50">
           <MessageState
             tone="empty"
-            title="No orders yet"
+            title={statusFilter ? `No ${statusFilter} orders` : "No orders yet"}
             message="Customer orders will appear here after checkout."
           />
         </div>
@@ -196,6 +238,13 @@ const ManageOrders = () => {
           </table>
         </div>
       )}
+
+      {/* ---------------- Pagination ---------------- */}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* ---------------- Modal ---------------- */}
       {selectedOrder && (

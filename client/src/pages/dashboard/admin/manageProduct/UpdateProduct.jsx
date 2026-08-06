@@ -40,6 +40,7 @@ const UpdateProduct = () => {
     price: "",
     category: "",
     color: "",
+    stock: "",
   });
 
   const [images, setImages] = useState([]);
@@ -57,6 +58,10 @@ const UpdateProduct = () => {
         price: productData.product.price || "",
         category: productData.product.category || "",
         color: productData.product.color || "",
+        stock:
+          productData.product.stock === undefined || productData.product.stock === null
+            ? ""
+            : String(productData.product.stock),
       });
       setExistingImages(productData.product.images || []);
     }
@@ -78,6 +83,8 @@ const UpdateProduct = () => {
     if (!product.category) newErrors.category = "Select a category";
     if (!product.color) newErrors.color = "Select a color";
     if (!product.price || product.price <= 0) newErrors.price = "Enter valid price";
+    if (product.stock !== "" && (!Number.isInteger(Number(product.stock)) || Number(product.stock) < 0))
+      newErrors.stock = "Enter a whole number of items (0 or more), or leave empty for unlimited";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -93,7 +100,10 @@ const UpdateProduct = () => {
      const formData = new FormData();
 
 Object.entries(product).forEach(([key, value]) => {
-  formData.append(key, value);
+  // Skip empty optional fields (e.g. stock left blank = unlimited).
+  if (value !== "") {
+    formData.append(key, value);
+  }
 });
 
 images.forEach((img) => {
@@ -227,6 +237,17 @@ await updateProduct({ id, formData }).unwrap();
               options={colors}
               error={errors.color}
               required
+            />
+
+            <TextInput
+              name="stock"
+              label="Stock (optional)"
+              value={product.stock}
+              onChange={handleChange}
+              type="number"
+              min="0"
+              placeholder="e.g. 25 — leave empty for unlimited"
+              error={errors.stock}
             />
           </div>
 

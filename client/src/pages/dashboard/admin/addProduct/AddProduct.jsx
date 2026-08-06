@@ -32,6 +32,7 @@ const [addProduct] = useAddProductMutation();
     price: "",
     category: "",
     color: "",
+    stock: "",
   });
 
 const [images, setImages] = useState([]);
@@ -55,6 +56,8 @@ const [images, setImages] = useState([]);
     if (!product.color) newErrors.color = "Select a color";
     if (!product.price || product.price <= 0)
       newErrors.price = "Enter valid price";
+    if (product.stock !== "" && (!Number.isInteger(Number(product.stock)) || Number(product.stock) < 0))
+      newErrors.stock = "Enter a whole number of items (0 or more), or leave empty for unlimited";
 // validation
 if (!images.length)
   newErrors.image = "At least one image is required";
@@ -76,7 +79,10 @@ const handleSubmit = async (e) => {
     const formData = new FormData();
 
     Object.entries(product).forEach(([key, value]) => {
-      formData.append(key, value);
+      // Skip empty optional fields (e.g. stock left blank = unlimited).
+      if (value !== "") {
+        formData.append(key, value);
+      }
     });
 
     images.forEach((img) => {
@@ -92,6 +98,7 @@ const handleSubmit = async (e) => {
       price: "",
       category: "",
       color: "",
+      stock: "",
     });
 
     setImages([]);
@@ -156,6 +163,17 @@ const handleSubmit = async (e) => {
               onChange={handleChange}
               options={colors}
               error={errors.color}
+            />
+
+            <TextInput
+              name="stock"
+              label="Stock (optional)"
+              value={product.stock}
+              onChange={handleChange}
+              type="number"
+              min="0"
+              placeholder="e.g. 25 — leave empty for unlimited"
+              error={errors.stock}
             />
           </div>
 

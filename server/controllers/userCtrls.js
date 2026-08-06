@@ -15,12 +15,30 @@ const buildUserResponse = (user) => ({
 });
 
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User
-    .find({ isDeleted: false })
-    .select('_id email role')
-    .sort({ createdAt: -1 });
+  const { page = 1, limit = 10, search = "" } = req.query;
+  const numericLimit = Math.min(Math.max(Number(limit) || 10, 1), 100);
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const filter = { isDeleted: false };
 
-  res.status(200).json({ users });
+  if (search && String(search).trim()) {
+    filter.email = { $regex: String(search).trim(), $options: "i" };
+  }
+
+  const [totalUsers, users] = await Promise.all([
+    User.countDocuments(filter),
+    User.find(filter)
+      .select('_id email role')
+      .skip((currentPage - 1) * numericLimit)
+      .limit(numericLimit)
+      .sort({ createdAt: -1 }),
+  ]);
+
+  res.status(200).json({
+    users,
+    totalUsers,
+    totalPages: Math.ceil(totalUsers / numericLimit),
+    currentPage,
+  });
 });
 
 

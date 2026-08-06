@@ -23,6 +23,11 @@ const createProductSchema = Joi.object({
   oldPrice: Joi.number().positive().precision(2).greater(Joi.ref("price")).optional().messages({
     "number.greater": "Old price must be greater than the current price.",
   }),
+  stock: Joi.number().integer().min(0).optional().empty("").messages({
+    "number.base": "Stock must be a number.",
+    "number.integer": "Stock must be a whole number.",
+    "number.min": "Stock cannot be negative.",
+  }),
   color: Joi.string().trim().max(30).optional(),
 
   rating: Joi.number().min(0).max(5).precision(1).optional().messages({
@@ -46,6 +51,11 @@ const updateProductSchema = Joi.object({
   description: Joi.string().trim().min(10).max(1000).optional(),
   price: Joi.number().positive().precision(2).optional(),
   oldPrice: Joi.number().positive().precision(2).optional(),
+  stock: Joi.number().integer().min(0).optional().empty("").messages({
+    "number.base": "Stock must be a number.",
+    "number.integer": "Stock must be a whole number.",
+    "number.min": "Stock cannot be negative.",
+  }),
   color: Joi.string().trim().max(30).optional(),
   rating: Joi.number().min(0).max(5).precision(1).optional(),
 

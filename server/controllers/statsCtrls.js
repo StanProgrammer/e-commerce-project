@@ -4,23 +4,11 @@ const Order = require("../models/orderModel.js");
 const Review = require("../models/reviewModel.js");
 const Product = require("../models/prdModel.js");
 
-
-
-const getUserStats = asyncHandler(async (req, res) => {
-  const { email } = req.params;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
-
-  if (req.user.role !== "admin" && email !== req.user.email) {
-    return res.status(403).json({ message: "You can only view your own stats." });
-  }
-
+const computeStatsForEmail = async (email) => {
   const user = await User.findOne({ email, isDeleted: false });
 
   if (!user) {
-    return res.status(404).json({ error: "User not found" });
+    return null;
   }
 
   // Total spent + total purchased
@@ -49,12 +37,42 @@ const getUserStats = asyncHandler(async (req, res) => {
     userId: user._id,
   });
 
-  return res.status(200).json({
+  return {
     email,
     totalReviews,
     totalPurchased,
     totalSpent,
-  });
+  };
+};
+
+const getMyStats = asyncHandler(async (req, res) => {
+  const stats = await computeStatsForEmail(req.user.email);
+
+  if (!stats) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  return res.status(200).json(stats);
+});
+
+const getUserStats = asyncHandler(async (req, res) => {
+  const { email } = req.params;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  if (req.user.role !== "admin" && email !== req.user.email) {
+    return res.status(403).json({ message: "You can only view your own stats." });
+  }
+
+  const stats = await computeStatsForEmail(email);
+
+  if (!stats) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  return res.status(200).json(stats);
 });
 
 const getAdminStats = asyncHandler(async (req, res) => {
@@ -111,8 +129,8 @@ const getAdminStats = asyncHandler(async (req, res) => {
   });
 });
 
-
 module.exports = {
     getUserStats,
+    getMyStats,
     getAdminStats
 }

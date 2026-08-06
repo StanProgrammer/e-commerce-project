@@ -95,14 +95,14 @@ const apiLimiter = createRateLimiter({
 const authLimiter = createRateLimiter({
   name: "auth",
   windowMs: 15 * 60 * 1000,
-  max: 8,
+  max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10) || 8,
   message: "Too many sign-in attempts. Please wait 15 minutes before trying again.",
 });
 
 const passwordLimiter = createRateLimiter({
   name: "password",
   windowMs: 60 * 60 * 1000,
-  max: 4,
+  max: Number.parseInt(process.env.PASSWORD_RATE_LIMIT_MAX, 10) || 4,
   message: "Too many password reset attempts. Please wait before requesting another reset.",
 });
 
@@ -116,7 +116,7 @@ const contactLimiter = createRateLimiter({
 const checkoutLimiter = createRateLimiter({
   name: "checkout",
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: Number.parseInt(process.env.CHECKOUT_RATE_LIMIT_MAX, 10) || 10,
   message: "Too many checkout attempts. Please wait a few minutes and try again.",
 });
 

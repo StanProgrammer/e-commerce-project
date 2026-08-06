@@ -10,7 +10,7 @@ const statsApi = createApi({
     tagTypes: ["Stats"],
     endpoints: (builder) => ({
         getUserStats: builder.query({
-            query: (email) => `/user-stats/${email}`,
+            query: () => "/user-stats/mine",
             providesTags: ["Stats"],
         }),
         getAdminStats: builder.query({

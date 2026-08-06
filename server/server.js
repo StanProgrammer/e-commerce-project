@@ -9,6 +9,7 @@ require('dotenv').config({ path: envFile, override: true, quiet: true });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const { config, trimTrailingSlash } = require('./config/env');
 const { connectDatabase } = require('./config/database');
@@ -32,10 +33,14 @@ const { errorHandler, notFound } = require('./middlewares/errorHandler');
 const { apiLimiter, uploadLimiter } = require('./middlewares/rateLimiter');
 const { verifyToken } = require('./utils/helper');
 const adminOnly = require('./middlewares/adminOnly');
+const { swaggerSpec, swaggerUi } = require('./swagger');
 
 const app = express();
 
 app.set('trust proxy', 1);
+
+// Security headers (X-Content-Type-Options, HSTS, CSP defaults, etc.)
+app.use(helmet());
 
 // --- CORS ---
 const allowedOrigins = new Set(config.corsOrigins);
@@ -147,6 +152,10 @@ app.post(
 app.use(express.json({ limit: '30mb' }));
 app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(cookieParser());
+
+// --- Swagger UI (interactive OpenAPI docs) ---
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
 // --- Routes ---
 app.use('/api/auth', authRoutes);
