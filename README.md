@@ -1,5 +1,7 @@
 # Wiles and Rues Ecommerce Project
 
+[![CI](https://github.com/StanProgrammer/e-commerce-project/actions/workflows/ci.yml/badge.svg)](https://github.com/StanProgrammer/e-commerce-project/actions/workflows/ci.yml)
+
 A full-stack MERN ecommerce application with a React storefront, user dashboard, admin dashboard, product management, blogs, reviews, policies, contact handling, image uploads, and online payments.
 
 ## Features
