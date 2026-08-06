@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const AdminStats = ({ stats = {} }) => {
   const {
@@ -6,6 +7,8 @@ const AdminStats = ({ stats = {} }) => {
     totalOrders = 0,
     totalUsers = 0,
     totalProducts = 0,
+    lowStockCount = 0,
+    outOfStockCount = 0,
   } = stats;
 
   const cards = [
@@ -39,8 +42,41 @@ const AdminStats = ({ stats = {} }) => {
     },
   ];
 
+  const needsAttention = lowStockCount > 0 || outOfStockCount > 0;
+
   return (
     <div className="mt-6">
+      {/* Inventory alert — highlights products that need restocking */}
+      {needsAttention && (
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-lg text-amber-600">
+              <i className="ri-alert-line"></i>
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {lowStockCount > 0
+                  ? `${lowStockCount} product${lowStockCount === 1 ? " is" : "s are"} low on stock`
+                  : "No low-stock products"}
+                {outOfStockCount > 0
+                  ? `, ${outOfStockCount} out of stock`
+                  : ""}
+              </p>
+              <p className="text-xs text-amber-700">
+                Restock soon to avoid losing sales.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/dashboard/manage-products"
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-600"
+          >
+            Review inventory
+            <i className="ri-arrow-right-line"></i>
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {cards.map((card, index) => (
           <div

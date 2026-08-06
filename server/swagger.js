@@ -462,6 +462,42 @@ const swaggerSpec = {
         },
       },
     },
+    "/products/update-stock/{id}": {
+      patch: {
+        tags: ["Products"],
+        summary: "Update a product's stock level (admin)",
+        description: "JSON body. Pass a non-negative integer, or `null` to clear stock tracking (unlimited stock).",
+        security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+        parameters: [
+          { name: "id", in: "path", required: true, description: "Product ObjectId", schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["stock"],
+                properties: {
+                  stock: { type: "integer", minimum: 0, nullable: true, description: "Quantity on hand, or null for unlimited" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Stock updated",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ProductWriteResponse" } } },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+          429: { $ref: "#/components/responses/TooManyRequests" },
+        },
+      },
+    },
     "/products/delete-product/{id}": {
       delete: {
         tags: ["Products"],
@@ -1524,6 +1560,8 @@ const swaggerSpec = {
           totalProducts: { type: "integer" },
           totalReviews: { type: "integer" },
           totalRevenue: { type: "number" },
+          lowStockCount: { type: "integer", description: "Products at or below the low-stock threshold" },
+          outOfStockCount: { type: "integer", description: "Products with zero stock" },
           monthlyRevenue: {
             type: "array",
             items: {

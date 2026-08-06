@@ -7,6 +7,7 @@ import { addToCart } from "../../../store/features/cart/cartSlice";
 import ReviewCard from "../reviews/ReviewCard";
 import toast from "react-hot-toast";
 import { getProductImages } from "../../../utils/productImage";
+import { getStockInfo } from "../../../utils/stockStatus";
 
 const ProductPage = () => {
   const { id } = useParams();
@@ -30,9 +31,8 @@ const ProductPage = () => {
       ? Math.round((savings / Number(singleProduct.oldPrice)) * 100)
       : 0;
 
-  const tracksStock =
-    singleProduct.stock !== undefined && singleProduct.stock !== null;
-  const isOutOfStock = tracksStock && Number(singleProduct.stock) <= 0;
+  const stockInfo = getStockInfo(singleProduct.stock);
+  const isOutOfStock = stockInfo.status === "out";
 
   const formatPrice = (value) => {
     if (value === undefined || value === null || value === "") {
@@ -239,23 +239,31 @@ const ProductPage = () => {
               ) : null}
             </div>
 
-            {tracksStock ? (
+            {stockInfo.tracksStock ? (
               <div
                 className={`mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
-                  isOutOfStock
+                  stockInfo.status === "out"
                     ? "bg-red-50 text-red-600"
+                    : stockInfo.status === "low"
+                    ? "bg-amber-50 text-amber-700"
                     : "bg-emerald-50 text-emerald-700"
                 }`}
               >
                 <i
                   className={
-                    isOutOfStock ? "ri-close-circle-line" : "ri-checkbox-circle-line"
+                    stockInfo.status === "out"
+                      ? "ri-close-circle-line"
+                      : stockInfo.status === "low"
+                      ? "ri-alert-line"
+                      : "ri-checkbox-circle-line"
                   }
                   aria-hidden="true"
                 ></i>
-                {isOutOfStock
+                {stockInfo.status === "out"
                   ? "Out of stock"
-                  : `${Number(singleProduct.stock)} available in stock`}
+                  : stockInfo.status === "low"
+                  ? `Only ${stockInfo.stock} left in stock — order soon`
+                  : `${stockInfo.stock} available in stock`}
               </div>
             ) : null}
 

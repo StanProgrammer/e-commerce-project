@@ -33,6 +33,22 @@ describe("cartSlice", () => {
     expect(state.totalPrice).toBe(20);
   });
 
+  it("refuses to add an out-of-stock product", () => {
+    let state = cartReducer(undefined, addToCart({ _id: "p1", price: 10, stock: 0 }));
+
+    expect(state.products).toHaveLength(0);
+    expect(state.totalPrice).toBe(0);
+
+    // Out-of-stock items are still rejected when stock is negative.
+    state = cartReducer(state, addToCart({ _id: "p2", price: 10, stock: -1 }));
+    expect(state.products).toHaveLength(0);
+  });
+
+  it("still allows unlimited products (no stock field)", () => {
+    const state = cartReducer(undefined, addToCart({ _id: "p1", price: 10 }));
+    expect(state.products).toHaveLength(1);
+  });
+
   it("never exceeds tracked stock when incrementing", () => {
     let state = cartReducer(undefined, addToCart({ _id: "p1", price: 10, stock: 1 }));
     state = cartReducer(state, updateQuantity({ _id: "p1", type: "increment" }));

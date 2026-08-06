@@ -226,6 +226,38 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 
 
+/* ================= UPDATE STOCK ================= */
+const updateStock = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { stock } = req.body;
+
+  // null clears stock tracking entirely (product becomes unlimited again).
+  const update =
+    stock === null
+      ? { $unset: { stock: "" } }
+      : { $set: { stock } };
+
+  const product = await Product.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    update,
+    { new: true, runValidators: true }
+  );
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  await invalidateProductCache(id);
+
+  res.status(200).json({
+    message:
+      stock === null
+        ? "Stock tracking cleared — product is now unlimited."
+        : "Stock updated successfully",
+    product,
+  });
+});
+
 /* ================= DELETE PRODUCT ================= */
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -296,6 +328,7 @@ module.exports = {
   getAllProducts,
   getSingleProduct,
   updateProduct,
+  updateStock,
   deleteProduct,
   getRelatedProducts,
   invalidateProductCache,

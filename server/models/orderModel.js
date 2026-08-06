@@ -72,6 +72,14 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Guards against restoring inventory twice for the same order (e.g. an
+    // admin re-canceling an already-canceled order). Set when stock is given
+    // back; only cleared when a brand-new order decrements stock again.
+    stockRestored: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

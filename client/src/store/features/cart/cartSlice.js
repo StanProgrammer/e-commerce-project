@@ -19,6 +19,14 @@ const cartSlice = createSlice({
       const productId = payload._id;
       const existing = state.products.find((p) => p._id === productId);
 
+      // Never add an out-of-stock product (defense in depth — buttons on the
+      // storefront are already disabled when stock reaches zero).
+      const payloadTracksStock =
+        payload.stock !== undefined && payload.stock !== null;
+      if (!existing && payloadTracksStock && Number(payload.stock) <= 0) {
+        return;
+      }
+
       if (existing) {
         // Never exceed tracked stock; products without stock are unlimited.
         const maxQty =

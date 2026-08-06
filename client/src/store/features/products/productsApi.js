@@ -86,6 +86,19 @@ export const productsApi = createApi({
       providesTags: [{ type: "Products", id: "LIST" }],
     }),
 
+    // QUICK STOCK UPDATE (admin table inline editor)
+    updateStock: builder.mutation({
+      query: ({ id, stock }) => ({
+        url: `/update-stock/${id}`,
+        method: "PATCH",
+        body: { stock },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Products", id },
+        { type: "Products", id: "LIST" },
+      ],
+    }),
+
     // DELETE PRODUCT
     deleteProduct: builder.mutation({
       query: (id) => ({
@@ -105,6 +118,7 @@ export const {
   useGetSingleProductQuery,
   useAddProductMutation,
   useUpdateProductMutation,
+  useUpdateStockMutation,
   useFetchRelatedProductsQuery,
   useDeleteProductMutation,
 } = productsApi;

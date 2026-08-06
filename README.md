@@ -36,6 +36,7 @@ A full-stack **MERN** e-commerce application with a React storefront, user & adm
 - Search across the catalog, category pages, and product detail pages with related products
 - Trending products, deals, and promo sections on the home page
 - Shopping cart (Redux-persisted) and full checkout flow
+- Live stock indicators — "Only X left" / "Out of Stock" badges, with purchases blocked for out-of-stock items
 
 **Accounts & Payments**
 
@@ -48,6 +49,7 @@ A full-stack **MERN** e-commerce application with a React storefront, user & adm
 
 - User dashboard: orders, payments, reviews, profile management, and personal stats
 - Admin dashboard: products, users, orders, blogs, policies, feedback, and chart-based statistics
+- Inventory management: inline stock editing in the products table, Stock/Status columns with 🟢🟡🔴 indicators, low-stock row highlighting, and a restock alert on the dashboard
 
 **Content & Communication**
 
@@ -364,7 +366,7 @@ All routes are prefixed with `/api`:
 | `/api/auth` | Register, login (email/Google), password reset, session |
 | `/api/user` | User profiles and account management |
 | `/api/admin` | Admin user management (role change, soft-delete) |
-| `/api/products` | Catalog CRUD (admin writes, public reads) |
+| `/api/products` | Catalog CRUD + quick stock updates (admin writes, public reads) |
 | `/api/reviews` | Product reviews (verified purchasers only) |
 | `/api/orders` | Stripe checkout, confirm payment, webhook, order management |
 | `/api/stats` | User and admin dashboard statistics |

@@ -76,13 +76,29 @@ const getUserStats = asyncHandler(async (req, res) => {
 });
 
 const getAdminStats = asyncHandler(async (req, res) => {
-  const [totalUsers, totalOrders, totalProducts, totalReviews] =
-    await Promise.all([
-      User.countDocuments({ isDeleted: false }),
-      Order.countDocuments({ isDeleted: false }),
-      Product.countDocuments({ isDeleted: false }),
-      Review.countDocuments(),
-    ]);
+  const { lowStockThreshold } = require("../config/env").config.jobs;
+
+  const [
+    totalUsers,
+    totalOrders,
+    totalProducts,
+    totalReviews,
+    lowStockProducts,
+    outOfStockProducts,
+  ] = await Promise.all([
+    User.countDocuments({ isDeleted: false }),
+    Order.countDocuments({ isDeleted: false }),
+    Product.countDocuments({ isDeleted: false }),
+    Review.countDocuments(),
+    Product.countDocuments({
+      isDeleted: false,
+      stock: { $exists: true, $lte: lowStockThreshold },
+    }),
+    Product.countDocuments({
+      isDeleted: false,
+      stock: { $exists: true, $lte: 0 },
+    }),
+  ]);
 
   const stats = await Order.aggregate([
     { $match: { isDeleted: false } },
@@ -125,7 +141,9 @@ const getAdminStats = asyncHandler(async (req, res) => {
     totalProducts,
     totalReviews,
     totalRevenue,
-    monthlyRevenue
+    monthlyRevenue,
+    lowStockCount: lowStockProducts,
+    outOfStockCount: outOfStockProducts,
   });
 });
 

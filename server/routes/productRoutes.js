@@ -9,6 +9,7 @@ const validateQuery = require('../middlewares/validateQuery');
 const {
   createProductSchema,
   updateProductSchema,
+  updateStockSchema,
   getProductByIdSchema,
   deleteProductSchema,
   getAllProductsQuerySchema,
@@ -55,6 +56,16 @@ router.patch(
   upload.array("images", 5), //  FIRST
   validateBody(updateProductSchema), //  AFTER
   prdCtrls.updateProduct
+);
+
+router.patch(
+  '/update-stock/:id',
+  writeLimiter,
+  verifyToken,
+  adminOnly,
+  validateParams(getProductByIdSchema),
+  validateBody(updateStockSchema),
+  prdCtrls.updateStock
 );
 
 router.delete(

@@ -226,7 +226,7 @@ describe("POST /api/orders/webhook", () => {
       data: { object: { id: "cs_complete" } },
     });
     client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
-    Product.updateOne.mockResolvedValue({});
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     const res = await request(app)
       .post("/api/orders/webhook")
@@ -238,9 +238,32 @@ describe("POST /api/orders/webhook", () => {
     expect(Order.__orders[0].status).toBe("processing");
     expect(Order.__orders[0].shippingAddress.country).toBe("IN");
     expect(Product.updateOne).toHaveBeenCalledWith(
-      { _id: "p1", stock: { $exists: true } },
-      expect.anything()
+      { _id: "p1", stock: { $gte: 2 } },
+      { $inc: { stock: -2 } }
     );
+  });
+
+  it("cancels the order and restores stock when stock is drained before payment", async () => {
+    const client = getStripeClient();
+    client.webhooks.constructEvent.mockReturnValue({
+      type: "checkout.session.completed",
+      data: { object: { id: "cs_complete" } },
+    });
+    client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
+    // Decrement fails (a concurrent checkout took the last unit); the
+    // compensating restore succeeds.
+    Product.updateOne.mockResolvedValueOnce({ modifiedCount: 0 });
+    Product.updateOne.mockResolvedValueOnce({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .post("/api/orders/webhook")
+      .set("stripe-signature", "sig")
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(Order.__orders).toHaveLength(1);
+    expect(Order.__orders[0].status).toBe("canceled");
+    expect(Order.__orders[0].stockRestored).toBe(true);
   });
 
   it("is idempotent when the webhook fires twice", async () => {
@@ -250,7 +273,7 @@ describe("POST /api/orders/webhook", () => {
       data: { object: { id: "cs_complete" } },
     });
     client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
-    Product.updateOne.mockResolvedValue({});
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     await request(app)
       .post("/api/orders/webhook")
@@ -262,6 +285,7 @@ describe("POST /api/orders/webhook", () => {
       .send({});
 
     expect(Order.__orders).toHaveLength(1);
+    expect(Product.updateOne).toHaveBeenCalledTimes(1);
   });
 
   it("rejects requests with an invalid signature", async () => {
@@ -361,5 +385,57 @@ describe("PATCH /api/orders/update-order-status/:id", () => {
       .send({ status: "teleported" });
 
     expect(res.status).toBe(400);
+  });
+
+  it("restores stock once when an order is canceled", async () => {
+    Order.__orders.push({
+      _id: VALID_OBJECT_ID,
+      orderId: "pi_cancel_1",
+      email: "buyer@example.com",
+      status: "processing",
+      products: [{ productId: "p1", quantity: 2 }],
+      statusHistory: [{ status: "processing", time: new Date() }],
+      save: jest.fn(async function () {
+        return this;
+      }),
+    });
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .patch(`/api/orders/update-order-status/${VALID_OBJECT_ID}`)
+      .set(auth)
+      .send({ status: "canceled" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.order.status).toBe("canceled");
+    expect(res.body.order.stockRestored).toBe(true);
+    expect(Product.updateOne).toHaveBeenCalledWith(
+      { _id: "p1", stock: { $gte: 0 } },
+      { $inc: { stock: 2 } }
+    );
+  });
+
+  it("does not restore stock twice for the same order", async () => {
+    Order.__orders.push({
+      _id: VALID_OBJECT_ID,
+      orderId: "pi_cancel_2",
+      email: "buyer@example.com",
+      status: "processing",
+      stockRestored: true,
+      products: [{ productId: "p1", quantity: 2 }],
+      statusHistory: [{ status: "processing", time: new Date() }],
+      save: jest.fn(async function () {
+        return this;
+      }),
+    });
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .patch(`/api/orders/update-order-status/${VALID_OBJECT_ID}`)
+      .set(auth)
+      .send({ status: "canceled" });
+
+    expect(res.status).toBe(200);
+    expect(Product.updateOne).not.toHaveBeenCalled();
   });
 });

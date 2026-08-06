@@ -66,7 +66,13 @@ const CartModal = ({ products, isOpen, onClose }) => {
             {products.length === 0 ? (
               <div className="rounded-xl bg-slate-50 p-4 text-slate-600">Your cart is empty.</div>
             ) : (
-              products.map((product, index) => (
+              products.map((product, index) => {
+                const isOutOfStock =
+                  product.stock !== undefined &&
+                  product.stock !== null &&
+                  Number(product.stock) <= 0;
+
+                return (
                 <div
                   key={product._id}
                   className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 p-3 shadow-sm md:p-4"
@@ -92,6 +98,12 @@ const CartModal = ({ products, isOpen, onClose }) => {
                     <div className="min-w-0 flex-1">
                       <h5 className="font-semibold">{product.name}</h5>
                       <p className="text-sm text-gray-800 font-semibold">${Number(product.price)}</p>
+                      {isOutOfStock && (
+                        <p className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                          <i className="ri-close-circle-line" aria-hidden="true"></i>
+                          Out of stock
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -107,7 +119,8 @@ const CartModal = ({ products, isOpen, onClose }) => {
                       <span className="mx-2 min-w-6 text-center">{product.quantity}</span>
                       <button
                         onClick={() => handleQuantityChange("increment", product._id)}
-                        className="flex size-7 items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-primary hover:text-white cursor-pointer"
+                        disabled={isOutOfStock}
+                        className="flex size-7 items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-primary hover:text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         +
                       </button>
@@ -121,7 +134,8 @@ const CartModal = ({ products, isOpen, onClose }) => {
                     </button>
                   </div>
                 </div>
-              ))
+                );
+              })
             )}
           </div>
           {/* calculate total price */}

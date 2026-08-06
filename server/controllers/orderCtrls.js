@@ -96,7 +96,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
       quantity > dbProduct.stock
     ) {
       return res.status(400).json({
-        message: `Only ${dbProduct.stock} left in stock for "${dbProduct.name}".`,
+        message:
+          dbProduct.stock <= 0
+            ? `"${dbProduct.name}" is currently out of stock.`
+            : `Only ${dbProduct.stock} left in stock for "${dbProduct.name}".`,
       });
     }
 
@@ -152,13 +155,49 @@ const extractShippingAddress = (session) => {
   };
 };
 
-// Decrement stock atomically, clamped at zero. Only touches products that
-// actually track stock (have the field present).
+// Decrement stock atomically. The query only matches products that track
+// stock AND have enough units, so a concurrent checkout can never oversell and
+// stock can never go negative. Returns true when the quantity was deducted
+// (products with missing/null stock are treated as unlimited and skipped).
 const decrementStock = async (productId, quantity) => {
-  await Product.updateOne(
-    { _id: productId, stock: { $exists: true } },
-    [{ $set: { stock: { $max: [0, { $subtract: ["$stock", quantity] }] } } }]
+  const result = await Product.updateOne(
+    { _id: productId, stock: { $gte: quantity } },
+    { $inc: { stock: -quantity } }
   );
+
+  return (result.modifiedCount || 0) > 0;
+};
+
+// Add stock back for an order's product line. Only touches products that
+// track stock; missing/null stock (unlimited) is left alone.
+const restoreStock = async (productId, quantity) => {
+  await Product.updateOne(
+    { _id: productId, stock: { $gte: 0 } },
+    { $inc: { stock: quantity } }
+  );
+};
+
+// Give back inventory for every product line on an order. Best-effort — a
+// restore failure is logged but never blocks the order status change.
+const restoreStockForOrder = async (order) => {
+  const items = order.products || [];
+
+  if (!items.length) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    items.map((item) => restoreStock(item.productId, item.quantity))
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === "rejected") {
+      console.error(
+        `Stock restore failed for product ${items[index]?.productId}:`,
+        result.reason?.message || result.reason
+      );
+    }
+  });
 };
 
 // Record an order from a Stripe checkout session. Idempotent: when an order
@@ -221,24 +260,57 @@ const recordOrderFromSession = async (session) => {
   }
 
   if (isNewOrder) {
-    // Best-effort inventory decrement — never fail order recording because
-    // of it, and only the request that actually created the order decrements.
+    // Only the request that actually created the order decrements, so the
+    // webhook and confirm-payment paths never double-deduct.
+    const items = order.products || [];
     const decrements = await Promise.allSettled(
-      (order.products || []).map((item) =>
-        decrementStock(item.productId, item.quantity)
-      )
+      items.map((item) => decrementStock(item.productId, item.quantity))
     );
 
-    decrements.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(
-          `Stock decrement failed for product ${order.products[index]?.productId}:`,
-          result.reason?.message || result.reason
-        );
-      }
-    });
+    const oversold = decrements.some(
+      (result, index) =>
+        result.status === "rejected" ||
+        items[index] == null ||
+        result.value !== true
+    );
 
-    if (isPaid) {
+    if (oversold) {
+      // A concurrent checkout drained stock between validation and payment.
+      // Compensate the decrements that did succeed and cancel the order so
+      // stock is never negative.
+      await Promise.allSettled(
+        decrements.map((result, index) =>
+          result.status === "fulfilled" && result.value === true
+            ? restoreStock(items[index].productId, items[index].quantity)
+            : null
+        )
+      );
+
+      // If the customer already paid, refund them so they are never charged
+      // for an order we cannot fulfil.
+      if (isPaid) {
+        try {
+          await getStripe().refunds.create({ payment_intent: paymentIntentId });
+        } catch (refundError) {
+          console.error(
+            `Failed to refund oversold order ${order.orderId}:`,
+            refundError.message
+          );
+        }
+      }
+
+      order.status = "canceled";
+      order.statusHistory.push({ status: "canceled", time: new Date() });
+      order.stockRestored = true;
+
+      await order.save().catch((err) => {
+        console.error("Failed to mark oversold order as canceled:", err.message);
+      });
+
+      console.error(
+        `Order ${order.orderId} canceled — insufficient stock after payment.`
+      );
+    } else if (isPaid) {
       try {
         // Queue the email with a deterministic id so the webhook and the
         // confirm-payment request cannot both enqueue it.
@@ -300,6 +372,13 @@ const markOrderCanceled = async (paymentIntentId) => {
     status: "canceled",
     time: new Date(),
   });
+
+  // A recorded (pending) order has already decremented stock, so give it back
+  // unless it was restored before.
+  if (!order.stockRestored) {
+    await restoreStockForOrder(order);
+    order.stockRestored = true;
+  }
 
   await order.save();
 };
@@ -430,6 +509,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   order.status = status;
+
+  // Restore inventory once when an order is canceled (covers refunds too).
+  if (statusChanged && status === "canceled" && !order.stockRestored) {
+    await restoreStockForOrder(order);
+    order.stockRestored = true;
+  }
 
   await order.save();
 
