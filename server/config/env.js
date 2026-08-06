@@ -72,6 +72,11 @@ const config = {
     connectTimeoutMs: parsePositiveInteger(process.env.REDIS_CONNECT_TIMEOUT_MS, 10000),
     pingTimeoutMs: parsePositiveInteger(process.env.REDIS_PING_TIMEOUT_MS, 3000),
   },
+  jobs: {
+    lowStockThreshold: parsePositiveInteger(process.env.LOW_STOCK_THRESHOLD, 5),
+    purgeAfterDays: parsePositiveInteger(process.env.PURGE_SOFT_DELETED_AFTER_DAYS, 30),
+    lowStockAlertTo: (process.env.LOW_STOCK_ALERT_TO || process.env.CONTACT_TO_EMAIL || "").trim(),
+  },
   seedDefaultBlogs: process.env.SEED_DEFAULT_BLOGS !== "false",
 };
 

@@ -90,6 +90,8 @@ A full-stack **MERN** e-commerce application with a React storefront, user & adm
 | Multer + Cloudinary | Image uploads |
 | Stripe | Checkout sessions and webhooks |
 | Nodemailer + Resend | Transactional and contact emails |
+| BullMQ + ioredis | Background jobs (emails, scheduled maintenance) |
+| Bull Board | Admin queue dashboard at `/api/queues` |
 | Helmet, cors, cookie-parser, rate limiting | Security hardening |
 | Jest + Supertest | Server integration tests |
 | Swagger UI Express | Interactive API docs |
@@ -219,6 +221,11 @@ CACHE_RELATED_PRODUCTS_TTL_SECONDS=180
 CACHE_BLOGS_LIST_TTL_SECONDS=180
 CACHE_BLOG_DETAIL_TTL_SECONDS=600
 CACHE_POLICY_TTL_SECONDS=900
+
+# Background jobs (BullMQ) — require REDIS_ENABLED=true and Redis >= 5
+LOW_STOCK_THRESHOLD=5
+PURGE_SOFT_DELETED_AFTER_DAYS=30
+LOW_STOCK_ALERT_TO=
 
 SEED_DEFAULT_BLOGS=true
 MONGOOSE_MAX_POOL_SIZE=10
@@ -367,6 +374,7 @@ All routes are prefixed with `/api`:
 | `/api/feedback` | Bug/feature feedback reports |
 | `/api/health` | Health check |
 | `/api/upload-image` | Cloudinary image upload (admin) |
+| `/api/queues` | Bull Board background-job dashboard (admin, Redis only) |
 
 ## Redis Caching
 
@@ -391,6 +399,53 @@ How caching behaves:
 - Server logs cache hits, misses, writes, Redis errors, and invalidation counts with a `[cache]` prefix
 - Product, blog, review, and policy **writes invalidate** the affected cached read paths immediately
 - TTLs are configurable per endpoint (`CACHE_*_TTL_SECONDS` in the env template)
+
+## Background Jobs (BullMQ)
+
+Fire-and-forget and scheduled work runs on [BullMQ](https://docs.bullmq.io/) using the same Redis server as the cache (BullMQ keys use its own `bull:` prefix, so they never collide with `wiles-rues:` cache keys). BullMQ requires **Redis ≥ 5**; the Docker image recommended below is Redis 7.
+
+**What runs in the background:**
+
+| Job | Queue | When | Retries |
+| --- | --- | --- | --- |
+| `order-confirmation` | `emails` | order paid (deduplicated via `jobId`) | 3, exponential backoff |
+| `order-status` | `emails` | admin sets shipped / delivered / canceled | 3, exponential backoff |
+| `password-reset` | `emails` | forgot-password request | 3, exponential backoff |
+| `low-stock-check` | `admin` | daily at 09:00 UTC (cron) | 2 |
+| `purge-soft-deleted` | `admin` | daily at 03:00 UTC (cron) | 2 |
+
+**How it's wired:**
+
+```text
+Express API (producer)                   Worker process (separate)
+orderCtrls / authCtrls  ── add job ──▶   node workers/index.js
+  emailQueue.add(...)          Redis     Worker("emails") / Worker("admin")
+                                         └─ reuse utils/email.js helpers
+```
+
+The API only **produces** jobs (it never processes them) and falls back to sending emails inline when Redis is unavailable. The **worker is a separate process**; start it in another terminal:
+
+```bash
+cd server
+npm run worker        # production: node workers/index.js
+npm run worker:dev    # development: nodemon workers/index.js
+```
+
+**Graceful degradation:** when `REDIS_ENABLED=false`, or Redis is down, the producer calls return `null` and the controllers send emails inline — mirroring the cache's `SKIP`/`BYPASS` behaviour. The store keeps working with no Redis at all.
+
+**Monitoring:** an admin-only **Bull Board** dashboard is mounted at `/api/queues` (behind the same auth as the admin API) whenever Redis is enabled. It shows queues, jobs, retries and failures, and lets you retry or clean jobs. Open `http://localhost:5000/api/queues` while logged in as an admin. (If Redis goes down and comes back while the API process is running, restart the server so the dashboard picks up the fresh queues — the job producers recover automatically either way.)
+
+**Job tuning:**
+
+```env
+LOW_STOCK_THRESHOLD=5              # alert when tracked stock is <= this
+PURGE_SOFT_DELETED_AFTER_DAYS=30   # hard-delete soft-deleted orders/blogs older than this
+LOW_STOCK_ALERT_TO=                # alert recipient (defaults to CONTACT_TO_EMAIL)
+```
+
+**Deployment note:** the worker is a long-running process and cannot run on Vercel serverless functions. Deploy `npm run worker` on a persistent host (Render background worker, Railway, EC2/container) sharing the same Redis instance as the API.
+
+**Security note:** job payloads are stored in plain text in Redis (standard BullMQ behaviour). Keep payloads to ids/email addresses only — never passwords, card data, or other secrets — and use a TLS URL (`rediss://`) for a managed Redis instance in production.
 
 ## Stripe Webhook Setup
 
@@ -431,6 +486,8 @@ npm run dev          # Start backend with nodemon
 npm start            # Start backend with node
 npm test             # Run Jest + Supertest tests
 npm run docs:postman # Regenerate the Postman collection from the OpenAPI spec
+npm run worker       # Start the BullMQ background worker (needs Redis >= 5)
+npm run worker:dev   # Start the worker with nodemon
 ```
 
 **Root**
@@ -521,6 +578,9 @@ Notes for production:
 | Webhook returns 400 | Verify `STRIPE_WEBHOOK_SECRET` and that the event is sent with the raw body to `/api/orders/webhook` |
 | Reset emails not delivered | Use a Gmail **app password** (not the account password) and confirm `SMTP_TIMEOUT_MS` is generous enough |
 | Contact form fails with 500 | `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, and `CONTACT_FROM_EMAIL` must be configured and the sender verified |
+| Bull Board at `/api/queues` returns 404 | BullMQ requires `REDIS_ENABLED=true` and Redis ≥ 5; the dashboard is only mounted when those hold |
+| Emails send inline instead of through the queue | Redis is disabled/unreachable, so jobs automatically fall back to inline sending |
+| Queue jobs stuck unprocessed | Start the worker process with `npm run worker` (see [Background Jobs](#background-jobs-bullmq)) |
 | Logged-in user sees `403` on admin pages | Log in with an admin account — see [Create an Admin Account](#4-create-an-admin-account) |
 
 ## License

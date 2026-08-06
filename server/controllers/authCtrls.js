@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { clearCookieOptions, cookieOptions, generateToken } = require('../utils/helper');
 const { config } = require('../config/env');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { addEmailJob } = require('../queues/emailQueue');
 
 const PASSWORD_RESET_RESPONSE = "If an account exists for that email, a password reset link has been sent.";
 
@@ -279,25 +280,36 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const resetUrl = `${config.passwordResetClientUrl}/reset-password/${resetToken}`;
 
-  try {
-    await sendPasswordResetEmail({
-      to: user.email,
-      resetUrl,
-      username: user.username,
-    });
+  // Prefer the email queue so the response is not blocked on SMTP and the
+  // email gets automatic retries. When Redis is disabled, fall back to
+  // sending inline with the previous error handling.
+  const queued = await addEmailJob("password-reset", {
+    to: user.email,
+    resetUrl,
+    username: user.username,
+  });
 
-    return res.status(200).json({ message: PASSWORD_RESET_RESPONSE });
-  } catch (err) {
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
+  if (!queued) {
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        resetUrl,
+        username: user.username,
+      });
+    } catch (err) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save({ validateBeforeSave: false });
 
-    console.error("Password reset email failed:", err.message);
+      console.error("Password reset email failed:", err.message);
 
-    return res.status(err.responseCode || 500).json({
-      message: "We could not send a reset email right now. Please try again later.",
-    });
+      return res.status(err.responseCode || 500).json({
+        message: "We could not send a reset email right now. Please try again later.",
+      });
+    }
   }
+
+  return res.status(200).json({ message: PASSWORD_RESET_RESPONSE });
 });
 
 const resetPassword = asyncHandler(async (req, res) => {

@@ -181,8 +181,66 @@ const sendOrderStatusEmail = async ({ to, orderId, status }) => {
   }
 };
 
+const sendLowStockAlertEmail = async ({ products }) => {
+  const { user } = getEmailConfig();
+  const transporter = createTransporter();
+  const from = `"Willow & Rue" <${user}>`;
+  const to = config.jobs?.lowStockAlertTo || user;
+  const list = products || [];
+
+  const rows = list
+    .map(
+      (product) =>
+        `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee;">${escapeHtml(product.name)}</td>` +
+        `<td style="padding:6px 12px;border-bottom:1px solid #eee;">${escapeHtml(product.category || "-")}</td>` +
+        `<td style="padding:6px 12px;border-bottom:1px solid #eee;">${Number(product.stock)}</td></tr>`
+    )
+    .join("");
+
+  const message = {
+    from,
+    to,
+    subject: `Low stock alert: ${list.length} product(s) need reordering`,
+    text: [
+      "Hi,",
+      "",
+      `${list.length} product(s) are at or below the low-stock threshold:`,
+      "",
+      ...list.map(
+        (product) =>
+          `- ${product.name} (${product.category || "uncategorized"}): ${Number(product.stock)} left`
+      ),
+      "",
+      "Willow & Rue",
+    ].join("\n"),
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+        <h2 style="margin-bottom: 12px;">Low stock alert</h2>
+        <p>${list.length} product(s) are at or below the low-stock threshold:</p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 520px;">
+          <thead>
+            <tr style="background: #f1f5f9; text-align: left;">
+              <th style="padding: 6px 12px;">Product</th>
+              <th style="padding: 6px 12px;">Category</th>
+              <th style="padding: 6px 12px;">Stock</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `,
+  };
+
+  try {
+    await sendMailWithTimeout(transporter, message);
+  } finally {
+    transporter.close();
+  }
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendOrderConfirmationEmail,
   sendOrderStatusEmail,
+  sendLowStockAlertEmail,
 };

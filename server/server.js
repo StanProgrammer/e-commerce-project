@@ -34,6 +34,7 @@ const { apiLimiter, uploadLimiter } = require('./middlewares/rateLimiter');
 const { verifyToken } = require('./utils/helper');
 const adminOnly = require('./middlewares/adminOnly');
 const { swaggerSpec, swaggerUi } = require('./swagger');
+const { getBullBoardRouter } = require('./queues/bullBoard');
 
 const app = express();
 
@@ -170,6 +171,14 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/policy', policyRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
+// --- Bull Board (background job dashboard, admin-only) ---
+// Mounted only when Redis/BullMQ is available; protected by the same auth
+// middlewares used for the admin API.
+const bullBoardRouter = getBullBoardRouter();
+
+if (bullBoardRouter) {
+  app.use('/api/queues', verifyToken, adminOnly, bullBoardRouter);
+}
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));
 app.get('/api/health', async (req, res, next) => {

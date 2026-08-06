@@ -8,6 +8,7 @@ const {
   sendOrderConfirmationEmail,
   sendOrderStatusEmail,
 } = require("../utils/email.js");
+const { addEmailJob } = require("../queues/emailQueue.js");
 
 let stripeClient = null;
 const ORDER_STATUSES = new Set(["pending", "processing", "shipped", "delivered", "canceled"]);
@@ -238,13 +239,26 @@ const recordOrderFromSession = async (session) => {
     });
 
     if (isPaid) {
-      sendOrderConfirmationEmail({
-        to: order.email,
-        orderId: order.orderId,
-        amount: order.amount,
-      }).catch((err) => {
+      try {
+        // Queue the email with a deterministic id so the webhook and the
+        // confirm-payment request cannot both enqueue it.
+        const queued = await addEmailJob(
+          "order-confirmation",
+          { to: order.email, orderId: order.orderId, amount: order.amount },
+          { jobId: `order-confirmation-${order.orderId}` }
+        );
+
+        if (!queued) {
+          // Redis disabled — send inline, as before.
+          await sendOrderConfirmationEmail({
+            to: order.email,
+            orderId: order.orderId,
+            amount: order.amount,
+          });
+        }
+      } catch (err) {
         console.error("Order confirmation email failed:", err.message);
-      });
+      }
     }
   }
 
@@ -420,13 +434,24 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   await order.save();
 
   if (statusChanged && ["shipped", "delivered", "canceled"].includes(status)) {
-    sendOrderStatusEmail({
-      to: order.email,
-      orderId: order.orderId,
-      status,
-    }).catch((err) => {
+    try {
+      const queued = await addEmailJob("order-status", {
+        to: order.email,
+        orderId: order.orderId,
+        status,
+      });
+
+      if (!queued) {
+        // Redis disabled — send inline, as before.
+        await sendOrderStatusEmail({
+          to: order.email,
+          orderId: order.orderId,
+          status,
+        });
+      }
+    } catch (err) {
       console.error("Order status email failed:", err.message);
-    });
+    }
   }
 
   res.status(200).json({
