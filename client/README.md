@@ -1,16 +1,47 @@
-# React + Vite
+# Client — Wiles and Rues Storefront
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite frontend for the Wiles and Rues e-commerce application.
 
-Currently, two official plugins are available:
+> See the [root README](../README.md) for setup, environment variables, scripts, and deployment instructions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quick Start
 
-## React Compiler
+```bash
+npm install
+npm run dev        # Start the Vite dev server (http://localhost:5173)
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Build the production bundle |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run Vitest + React Testing Library tests |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Environment Variables
+
+Copy `.env.example` to `.env.development` for local development:
+
+```env
+VITE_API_BACKEND_URL=http://localhost:5000
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+`VITE_API_BACKEND_URL` is optional in production — the app falls back to the current origin when it's unset.
+
+## Structure
+
+```text
+src/
+├── components/   # Shared UI components (Navbar, Footer, CartModal, ...)
+├── pages/        # Route pages (Home, Shop, Blog, Contact, dashboards)
+├── routers/      # Route definitions + protected routes
+├── store/        # Redux Toolkit slices & RTK Query APIs
+├── utils/        # Helpers (baseUrl, error messages, formatting)
+├── data/         # Static content (categories, default policy)
+└── test/         # Vitest setup
+```
