@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -26,6 +27,10 @@ jobs:
           cache-dependency-path: |
             client/package-lock.json
             server/package-lock.json
+
+      # ---- Env hygiene: .env.example must match the committed manifest ----
+      - name: Env example ↔ manifest sync check
+        run: npm run env:check
 
       # ---- Server (23 Jest+Supertest tests; mocked DB/Redis, no services needed) ----
       - name: Install server dependencies
@@ -57,5 +62,52 @@ jobs:
         working-directory: client
         run: npm run build
 
-  # Note: deployment is handled by Vercel's native GitHub integration (auto-deploy
-  # on push to main), so this pipeline only runs CI: tests, lint, and build.
+  # Syncs production env vars to Render + Vercel whenever main is pushed, so
+  # providers are updated without touching their dashboards. The local
+  # .env.production files are gitignored, so their contents are stored as
+  # repository secrets and materialized here before pushing.
+  env-sync:
+    name: Sync env to Render + Vercel
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Materialize production env files from secrets
+        shell: bash
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV_PRODUCTION }}
+          CLIENT_ENV: ${{ secrets.CLIENT_ENV_PRODUCTION }}
+        run: |
+          if [ -z "$SERVER_ENV" ]; then
+            echo "::error::Secret SERVER_ENV_PRODUCTION is empty — set it to the contents of server/.env.production."
+            exit 1
+          fi
+          if [ -z "$CLIENT_ENV" ]; then
+            echo "::error::Secret CLIENT_ENV_PRODUCTION is empty — set it to the contents of client/.env.production."
+            exit 1
+          fi
+          printf '%s' "$SERVER_ENV" > server/.env.production
+          printf '%s' "$CLIENT_ENV" > client/.env.production
+
+      # Same script as local `npm run env:push`; credentials come from the
+      # environment (repository secrets) instead of .env.push. Values are
+      # masked in logs. The Render env-vars list endpoint is cursor-paginated
+      # (20 per page) and the script reads every page before verifying that all
+      # vars persisted, so a successful run means the full list is live.
+      - name: Push env vars to Render + Vercel
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npm run env:push

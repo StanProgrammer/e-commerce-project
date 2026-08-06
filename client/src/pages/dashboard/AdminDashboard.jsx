@@ -5,6 +5,7 @@ import { logout } from "../../store/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import getApiErrorMessage from "../../utils/getApiErrorMessage";
+import getBaseUrl from "../../utils/baseUrl";
 
 const AdminDashboard = () => {
   const [logoutUser, { isLoading }] = useLogoutUserMutation();
@@ -23,6 +24,13 @@ const AdminDashboard = () => {
       { path: "user-management", label: "Users", icon: "ri-user-3-line" },
       { path: "manage-orders", label: "Orders", icon: "ri-shopping-cart-2-line" },
       { path: "manage-feedback", label: "Feedback", icon: "ri-feedback-line" },
+      {
+        path: "queues",
+        label: "Background Jobs",
+        icon: "ri-timer-flash-line",
+        external: true,
+        href: `${getBaseUrl()}/api/queues`,
+      },
     ],
     []
   );
@@ -66,19 +74,33 @@ const AdminDashboard = () => {
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      isActive
-                        ? "bg-primary text-white shadow-md"
-                        : "hover:bg-gray-700 hover:text-white"
-                    }`
-                  }
-                >
-                  <i className={`${item.icon} text-lg`} />
-                  {item.label}
-                </NavLink>
+                {item.external ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open the Bull Board queue dashboard in a new tab"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all hover:bg-gray-700 hover:text-white group"
+                  >
+                    <i className={`${item.icon} text-lg`} />
+                    {item.label}
+                    <i className="ri-external-link-line text-xs ml-auto text-gray-500 group-hover:text-white transition-colors" />
+                  </a>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-primary text-white shadow-md"
+                          : "hover:bg-gray-700 hover:text-white"
+                      }`
+                    }
+                  >
+                    <i className={`${item.icon} text-lg`} />
+                    {item.label}
+                  </NavLink>
+                )}
               </li>
             ))}
           </ul>

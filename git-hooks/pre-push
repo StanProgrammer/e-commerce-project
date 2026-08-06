@@ -1,0 +1,37 @@
+#!/bin/sh
+# Pre-push hook (installed via `npm run hooks:install` → core.hooksPath = git-hooks)
+#
+#   1. Fails the push if local env files drifted from .env.example
+#      (fix with `npm run env:sync` and commit scripts/env-manifest.json).
+#   2. Reminds you to run `npm run env:push` when local env values changed
+#      since the last push.
+set -u
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR" || exit 1
+
+echo "==> [pre-push] checking env drift (npm run env:check) ..."
+if ! npm run env:check >/dev/null 2>&1; then
+  echo ""
+  echo "!! Env files are out of sync with .env.example."
+  echo "   Run:  npm run env:sync"
+  echo "   Then commit scripts/env-manifest.json and push again."
+  exit 1
+fi
+echo "==> env files in sync"
+
+HASH_FILE="$ROOT_DIR/.git/env-last-push.sha"
+HASH_NOW="$(
+  cat server/.env server/.env.local server/.env.production \
+      client/.env client/.env.development client/.env.production 2>/dev/null \
+  | git hash-object --stdin
+)"
+
+if [ -f "$HASH_FILE" ] && [ "$(cat "$HASH_FILE")" != "$HASH_NOW" ]; then
+  echo ""
+  echo "==> Local env values changed since the last push."
+  echo "    Sync the providers when you're ready:  npm run env:push"
+fi
+
+printf '%s' "$HASH_NOW" > "$HASH_FILE"
+exit 0

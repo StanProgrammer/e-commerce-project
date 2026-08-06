@@ -178,6 +178,16 @@ const bullBoardRouter = getBullBoardRouter();
 
 if (bullBoardRouter) {
   app.use('/api/queues', verifyToken, adminOnly, bullBoardRouter);
+} else {
+  // Redis is disabled/unavailable at boot, so there are no queues to monitor
+  // and the Bull Board router is not mounted. Reply with a clear explanation
+  // instead of the generic "Route not found" (which looks like a bug).
+  app.get('/api/queues', (_req, res) =>
+    res.status(503).json({
+      message:
+        "The background-jobs dashboard (Bull Board) is unavailable because Redis is not enabled. Set REDIS_ENABLED=true with a reachable Redis 7 (Memurai 4 Developer on Windows), then redeploy.",
+    })
+  );
 }
 
 app.get('/', (req, res) => res.send('Wiles and Rues'));

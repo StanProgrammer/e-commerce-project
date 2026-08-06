@@ -7,6 +7,13 @@
     "dev:client": "npm run dev --prefix client",
     "build": "npm run build --prefix client",
     "lint": "npm run lint --prefix client",
-    "start": "npm start --prefix server"
+    "start": "npm start --prefix server",
+    "env:sync": "node scripts/env-sync.js",
+    "env:sync:prune": "node scripts/env-sync.js --prune",
+    "env:check": "node scripts/env-sync.js --check",
+    "env:push": "node scripts/env-push.js",
+    "env:push:deploy": "node scripts/env-push.js --deploy",
+    "env:push:dry": "node scripts/env-push.js --dry-run",
+    "hooks:install": "node scripts/install-hooks.js"
   }
 }

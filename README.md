@@ -24,6 +24,7 @@ A full-stack **MERN** e-commerce application with a React storefront, user & adm
 - [Redis Caching](#redis-caching)
 - [Stripe Webhook Setup](#stripe-webhook-setup)
 - [Available Scripts](#available-scripts)
+- [Environment Variable Workflow](#environment-variable-workflow)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -404,7 +405,7 @@ How caching behaves:
 
 ## Background Jobs (BullMQ)
 
-Fire-and-forget and scheduled work runs on [BullMQ](https://docs.bullmq.io/) using the same Redis server as the cache (BullMQ keys use its own `bull:` prefix, so they never collide with `wiles-rues:` cache keys). BullMQ requires **Redis ≥ 5**; the Docker image recommended below is Redis 7.
+Fire-and-forget and scheduled work runs on [BullMQ](https://docs.bullmq.io/) using the same Redis server as the cache (BullMQ keys use its own `bull:` prefix, so they never collide with `wiles-rues:` cache keys). BullMQ requires **Redis ≥ 5** and the cache client (`redis` v6) needs **Redis ≥ 6**, so use **Redis 7** — the Docker image recommended below is Redis 7 (on Windows without Docker, install **Memurai 4 Developer**, which reports Redis 7 compatibility).
 
 **What runs in the background:**
 
@@ -501,13 +502,72 @@ npm run dev:client   # Start the frontend
 npm run build        # Build the client
 npm run lint         # Lint the client
 npm start            # Start the server
+npm run env:sync     # Add keys missing from local env files (see below)
+npm run env:check    # Verify env files are in sync (CI + pre-push)
+npm run env:push     # Push local env files to Render + Vercel
+npm run hooks:install  # Enable the versioned git pre-push hook
 ```
+
+## Environment Variable Workflow
+
+Keeping `.env.example`, your local env files, and the Render/Vercel dashboards in sync is fully scripted — no manual copy-pasting into hosting dashboards.
+
+### 1. Sync local env files (`npm run env:sync`)
+
+`.env.example` is the **source of truth** for which keys exist. After editing it (or adding a new variable to the code), run:
+
+```bash
+npm run env:sync             # add keys missing from local env files
+npm run env:sync -- --prune  # also remove keys that left .env.example
+npm run env:check            # report drift; exit 1 when out of sync
+```
+
+This keeps `server/.env`, `server/.env.local`, `server/.env.production`, `client/.env`, `client/.env.development`, and `client/.env.production` in step with their `.env.example`.
+
+- **Existing values are never overwritten.** Missing keys are filled from the first sibling file that already defines them — set a value once and it appears everywhere (keys with no known value are added empty, marked in the output).
+- The run also regenerates `scripts/env-manifest.json` — the committed “expected keys” snapshot that CI validates.
+
+### 2. Push env changes to Render + Vercel (`npm run env:push`)
+
+```bash
+npm run env:push          # Render ← server/.env.production · Vercel ← client/.env.production
+npm run env:push:deploy   # also trigger a Render deploy afterwards
+npm run env:push:dry      # preview changes without sending anything
+npm run env:push -- --prune   # also remove remote keys that left the local file
+npm run env:push -- --only=vercel  # push a single provider
+```
+
+Credentials are read from a gitignored `.env.push` file (copy from `.env.push.example`):
+
+```env
+RENDER_API_KEY=...
+RENDER_SERVICE_ID=srv-...      # or RENDER_SERVICE_IDS=a,b for multiple services
+VERCEL_TOKEN=...
+VERCEL_PROJECT_ID=...
+```
+
+- Render uses its REST API (`PUT /v1/services/{serviceId}/env-vars`) — note this **replaces the whole service-level list**. The env-vars list endpoint is cursor-paginated (20 per page) and the script reads **every page** before verifying, so it exits 0 only when the full list persisted — it never silently loses vars. Service vars configured via Render **environment groups** are not visible to this endpoint.
+- Vercel uses its project env API (`/v9/projects/{id}/env` to list, `/v10/projects/{id}/env` to create/update); team projects are handled automatically via `teamId`.
+- Values are **never printed in full** (masked) and dry-run shows exactly what would change.
+- Render env changes do **not** auto-deploy — run `npm run env:push:deploy`, or just push a commit (Render/Vercel auto-deploy on push to `main`).
+- Without credentials the script prints exactly which keys are missing and exits 1.
+
+### 3. Automation (CI + pre-push hook)
+
+- **CI** (`.github/workflows/ci.yml`) runs `npm run env:check` and fails if `.env.example` drifted from `scripts/env-manifest.json`.
+- **Pre-push hook** — run once:
+
+  ```bash
+  npm run hooks:install   # sets git core.hooksPath = git-hooks
+  ```
+
+  From then on, every `git push` runs `env:check` (blocking pushes that would ship a stale `.env.example`) and reminds you to run `npm run env:push` whenever local env values changed since the last push. Re-run `npm run hooks:install` after cloning the repo on a new machine.
 
 ## Deployment
 
 Both `client/` and `server/` include Vercel configuration files, and the server is also compatible with traditional hosts (e.g. Render — see the production server URL in `swagger.js`). Deployment to Vercel is handled by its native GitHub integration; the CI pipeline covers lint, tests, and builds.
 
-**Never commit `.env` files** — configure production variables in your hosting dashboard instead.
+**Never commit `.env` files** — they are gitignored. Use the [Environment Variable Workflow](#environment-variable-workflow) to push production values to Render and Vercel from `npm run env:push` instead of editing their dashboards by hand.
 
 <details>
 <summary>Production server environment</summary>
@@ -580,7 +640,7 @@ Notes for production:
 | Webhook returns 400 | Verify `STRIPE_WEBHOOK_SECRET` and that the event is sent with the raw body to `/api/orders/webhook` |
 | Reset emails not delivered | Use a Gmail **app password** (not the account password) and confirm `SMTP_TIMEOUT_MS` is generous enough |
 | Contact form fails with 500 | `RESEND_API_KEY`, `CONTACT_TO_EMAIL`, and `CONTACT_FROM_EMAIL` must be configured and the sender verified |
-| Bull Board at `/api/queues` returns 404 | BullMQ requires `REDIS_ENABLED=true` and Redis ≥ 5; the dashboard is only mounted when those hold |
+| Bull Board at `/api/queues` returns a 503/404 message | BullMQ requires `REDIS_ENABLED=true` and **Redis 7** (Redis ≥ 5 for BullMQ, but ≥ 6 for the cache client's HELLO command); the dashboard is only mounted when those hold. Locally, set it in `server/.env.local` and run Redis 7 — e.g. `docker run -p 6379:6379 redis:7-alpine`, or Memurai 4 Developer on Windows. Production Render already has it enabled — `/api/queues` works there |
 | Emails send inline instead of through the queue | Redis is disabled/unreachable, so jobs automatically fall back to inline sending |
 | Queue jobs stuck unprocessed | Start the worker process with `npm run worker` (see [Background Jobs](#background-jobs-bullmq)) |
 | Logged-in user sees `403` on admin pages | Log in with an admin account — see [Create an Admin Account](#4-create-an-admin-account) |
