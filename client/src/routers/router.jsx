@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import App from "../App.jsx";
 import PageSuspense from "../components/PageSuspense";
 import Privateroutes from "./Privateroutes.jsx";
@@ -15,7 +15,8 @@ const lazyElement = (importer) => {
   );
 };
 
-const router = createBrowserRouter([
+// Exported so tests can inspect the route tree without rendering it.
+export const routes = [
   {
     path: "/",
     element: <App />,
@@ -160,6 +161,15 @@ const router = createBrowserRouter([
           </Privateroutes>
         ),
       },
+      // Old URL kept so bookmarks/links never hit a 404.
+      {
+        path: "manage-users",
+        element: (
+          <Privateroutes role="admin">
+            <Navigate to="/dashboard/user-management" replace />
+          </Privateroutes>
+        ),
+      },
       {
         path: "manage-orders",
         element: (
@@ -210,6 +220,8 @@ const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+const router = createBrowserRouter(routes);
 
 export default router;
