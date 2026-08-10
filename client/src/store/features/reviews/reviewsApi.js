@@ -10,14 +10,6 @@ export const reviewsApi = createApi({
   tagTypes: ["Reviews"],
 
   endpoints: (builder) => ({
-    // Get reviews by product id
-    getReviewsByProductId: builder.query({
-      query: (productId) => `/product/${productId}`,
-      providesTags: (result, error, productId) => [
-        { type: "Reviews", id: productId },
-      ],
-    }),
-
     // Get reviews by user id 
     getReviewsByUserId: builder.query({
       query: (userId) => `/${userId}`, 
@@ -39,18 +31,10 @@ export const reviewsApi = createApi({
         "Reviews",
       ],
     }),
-
-    // Total reviews
-    getTotalReviews: builder.query({
-      query: () => "/total-reviews",
-      providesTags: ["Reviews"],
-    }),
   }),
 });
 
 export const {
-  useGetReviewsByProductIdQuery,
   useGetReviewsByUserIdQuery,
   usePostReviewMutation,
-  useGetTotalReviewsQuery,
 } = reviewsApi;
