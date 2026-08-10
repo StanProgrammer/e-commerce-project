@@ -2,9 +2,7 @@
 
 const fs = require("fs");
 
-/**
- * Read a file, returning null when it does not exist.
- */
+// Read a file, returning null when it does not exist.
 function readIfExists(file) {
   try {
     return fs.readFileSync(file, "utf8");
@@ -13,25 +11,12 @@ function readIfExists(file) {
   }
 }
 
-/**
- * Detect the dominant line-ending style of a text file.
- */
+// Detect the dominant line-ending style of a text file.
 function detectEol(content) {
   return /\r\n/.test(String(content)) ? "\r\n" : "\n";
 }
 
-/**
- * Parse .env content into line records:
- *   { raw, key, value, isKey }
- *
- * - Split on `\n` only, so `raw` keeps any trailing `\r` from CRLF files and
- *   serializing preserves the original line-ending style.
- * - Blank lines and comments keep `key === null`.
- * - `export KEY=...` prefixes are stripped for parsing.
- * - `KEY = value` (spaces around `=`) is normalized; dotenv accepts it.
- * - Values keep everything after `=` (quotes stripped); inline `#` is NOT
- *   treated as a comment (matching dotenv behavior).
- */
+// Parse .env content into records; handles CRLF, export prefixes, and quoted values.
 function parseEnv(content) {
   return String(content)
     .split("\n")
@@ -69,9 +54,7 @@ function parseEnv(content) {
     });
 }
 
-/**
- * Ordered list of keys present in a file ([] if the file is missing).
- */
+// Ordered list of keys present in a file ([] if the file is missing).
 function keysInOrder(file) {
   const content = readIfExists(file);
   if (content === null) return [];
@@ -80,9 +63,7 @@ function keysInOrder(file) {
     .map((l) => l.key);
 }
 
-/**
- * Map of key -> value for a file (empty Map if missing).
- */
+// Map of key -> value for a file (empty Map if missing).
 function getVars(file) {
   const content = readIfExists(file);
   const map = new Map();
@@ -93,9 +74,7 @@ function getVars(file) {
   return map;
 }
 
-/**
- * Mask a secret for display, e.g. `sk_•••r_123`.
- */
+// Mask a secret for display, e.g. `sk_•••r_123`.
 function maskSecret(value) {
   if (!value) return "";
   if (value.length <= 8) return "••••••••";

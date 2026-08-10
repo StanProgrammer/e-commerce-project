@@ -81,8 +81,7 @@ const ManageProducts = () => {
     const raw = stockDrafts[product._id];
     const trimmed = String(raw ?? "").trim();
 
-    // Empty input clears stock tracking (unlimited), matching the form's
-    // "leave empty for unlimited" behaviour.
+    // Empty input clears stock tracking (unlimited).
     const value = trimmed === "" ? null : Number(trimmed);
 
     if (value !== null && (!Number.isInteger(value) || value < 0)) {
@@ -117,7 +116,7 @@ const ManageProducts = () => {
     }
   };
 
-  // ---------------- STATES ----------------
+  // States
 
   if (isLoading) {
     return (
@@ -165,6 +164,7 @@ const ManageProducts = () => {
               <tr className="text-left text-xs uppercase text-gray-500 border-b">
                 <th className="px-6 py-4">No</th>
                 <th className="px-6 py-4">Product</th>
+                <th className="px-6 py-4">SKU</th>
                 <th className="px-6 py-4">Stock</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Date</th>
@@ -177,7 +177,7 @@ const ManageProducts = () => {
               {products.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="8"
                     className="text-center py-10 text-gray-500"
                   >
                     No products found. Add a product to start managing your catalog.
@@ -204,6 +204,12 @@ const ManageProducts = () => {
 
                       <td className="px-6 py-4 font-semibold text-gray-900">
                         {product.name}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-xs text-gray-500">
+                          {product.sku || "—"}
+                        </span>
                       </td>
 
                       <td className="px-6 py-4">

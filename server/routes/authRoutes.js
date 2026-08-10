@@ -1,4 +1,3 @@
-// routes/authRoutes.js
 const express = require('express');
 const validateBody = require('../middlewares/validateBody');
 const {
@@ -13,10 +12,9 @@ const router = express.Router();
 const { optionalVerifyToken } = require('../utils/helper');
 const { authLimiter, passwordLimiter } = require('../middlewares/rateLimiter');
 
-// GET 
 router.get('/', (req, res) => res.send('Auth routes'));
 
-// POST /api/auth/register
+// Register
 router.post('/register', authLimiter, validateBody(registerSchema), authCtrls.register);
 router.post('/login', authLimiter, validateBody(loginSchema), authCtrls.login);
 router.post('/google', authLimiter, validateBody(googleLoginSchema), authCtrls.googleLogin);

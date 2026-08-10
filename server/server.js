@@ -1,8 +1,6 @@
 require('dotenv').config({ quiet: true });
 
-// Load environment-specific overrides on top of .env:
-// - development (default): .env.local
-// - production:            .env.production
+// Load env-specific overrides (production -> .env.production, else .env.local)
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
 require('dotenv').config({ path: envFile, override: true, quiet: true });
 
@@ -40,7 +38,7 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// Security headers (X-Content-Type-Options, HSTS, CSP defaults, etc.)
+// Security headers (X-Content-Type-Options, HSTS, CSP, etc.)
 app.use(helmet());
 
 // --- CORS ---
@@ -140,9 +138,7 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
-// Stripe webhook: needs the raw request body for signature verification, so
-// it is mounted before the JSON body parser. It runs after the DB-init
-// middleware above so orders can be recorded in all deployment modes.
+// Stripe webhook needs the raw body, so mount it before the JSON parser.
 app.post(
   '/api/orders/webhook',
   express.raw({ type: 'application/json', limit: '2mb' }),
@@ -171,17 +167,13 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/policy', policyRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// --- Bull Board (background job dashboard, admin-only) ---
-// Mounted only when Redis/BullMQ is available; protected by the same auth
-// middlewares used for the admin API.
+// --- Bull Board (admin-only); mounted only when Redis is available ---
 const bullBoardRouter = getBullBoardRouter();
 
 if (bullBoardRouter) {
   app.use('/api/queues', verifyToken, adminOnly, bullBoardRouter);
 } else {
-  // Redis is disabled/unavailable at boot, so there are no queues to monitor
-  // and the Bull Board router is not mounted. Reply with a clear explanation
-  // instead of the generic "Route not found" (which looks like a bug).
+  // No Redis -> no queues to monitor. Reply clearly instead of a bare 404.
   app.get('/api/queues', (_req, res) =>
     res.status(503).json({
       message:
@@ -207,7 +199,6 @@ app.get('/api/health', async (req, res, next) => {
 });
 
 app.post("/api/upload-image", uploadLimiter, verifyToken, adminOnly, async (req, res, next) => {
-  // Handle image upload logic here (e.g., save to disk or cloud storage)
   try {
     const url = await uploadImage(req.body.image);
     res.json({ url });

@@ -76,7 +76,7 @@ const ManageOrders = () => {
     }
   };
 
-  /* ---------------- Loading State ---------------- */
+  /* Loading state */
   if (isLoading) {
     return (
       <div className="p-6">
@@ -95,7 +95,7 @@ const ManageOrders = () => {
     );
   }
 
-  /* ---------------- Error State ---------------- */
+  /* Error state */
   if (isError) {
     return (
       <div className="p-6">
@@ -258,7 +258,7 @@ const ManageOrders = () => {
   );
 };
 
-/* ---------------- Helpers ---------------- */
+/* Helpers */
 
 const formatDate = (date) => {
   if (!date) return "-";

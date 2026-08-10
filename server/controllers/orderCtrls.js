@@ -12,8 +12,7 @@ const { addEmailJob } = require("../queues/emailQueue.js");
 
 let stripeClient = null;
 const ORDER_STATUSES = new Set(["pending", "processing", "shipped", "delivered", "canceled"]);
-// Countries we are happy to ship to — used to collect a shipping address in
-// the Stripe checkout form.
+// Countries we ship to (shown in the Stripe checkout form).
 const SHIPPING_COUNTRIES = [
   "US", "CA", "GB", "AU", "IN", "AE", "DE", "FR", "ES", "IT", "NL", "SG",
 ];
@@ -27,9 +26,7 @@ const getStripe = () => {
   return stripeClient;
 };
 
-// Only trust the Origin header for post-payment redirects when it is one of
-// our own hosts; otherwise fall back to the configured client URL so a
-// spoofed Origin can never redirect customers to an attacker's site.
+// Only trust our own hosts for the post-payment redirect URL.
 const allowedOriginPatterns = [
   /^https:\/\/e-commerce-project-[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/e-commerce-project-[a-z0-9-]+-atib-khans-projects\.vercel\.app$/,
@@ -88,8 +85,7 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
       });
     }
 
-    // Products without a stock field are treated as unlimited so existing
-    // catalog items keep working. Tracked items cannot be oversold.
+    // No stock field means unlimited; tracked items can't be oversold.
     if (
       dbProduct.stock !== undefined &&
       dbProduct.stock !== null &&
@@ -155,12 +151,7 @@ const extractShippingAddress = (session) => {
   };
 };
 
-// Decrement stock atomically. The query only matches products that track
-// stock AND have enough units, so a concurrent checkout can never oversell and
-// stock can never go negative. Returns true when the quantity was deducted.
-// Products with missing/null stock are treated as unlimited: they are never
-// decremented and can never be oversold, so they return true without touching
-// the database.
+// Atomically deduct stock; unlimited items (missing/null stock) are skipped.
 const decrementStock = async (productId, quantity) => {
   const product = await Product.findOne(
     { _id: productId, isDeleted: false },
@@ -183,8 +174,7 @@ const decrementStock = async (productId, quantity) => {
   return (result.modifiedCount || 0) > 0;
 };
 
-// Add stock back for an order's product line. Only touches products that
-// track stock; missing/null stock (unlimited) is left alone.
+// Put stock back for an order line; unlimited items are left alone.
 const restoreStock = async (productId, quantity) => {
   await Product.updateOne(
     { _id: productId, stock: { $gte: 0 } },
@@ -192,8 +182,7 @@ const restoreStock = async (productId, quantity) => {
   );
 };
 
-// Give back inventory for every product line on an order. Best-effort — a
-// restore failure is logged but never blocks the order status change.
+// Give back all stock for an order; failures are logged, never blocking.
 const restoreStockForOrder = async (order) => {
   const items = order.products || [];
 
@@ -215,9 +204,7 @@ const restoreStockForOrder = async (order) => {
   });
 };
 
-// Record an order from a Stripe checkout session. Idempotent: when an order
-// already exists for the payment intent (e.g. the client confirm request and
-// the webhook both run), it is updated instead of duplicated.
+// Create or update the order for a Stripe session (idempotent per payment intent).
 const recordOrderFromSession = async (session) => {
   const paymentIntentId = session.payment_intent?.id;
 
@@ -263,8 +250,7 @@ const recordOrderFromSession = async (session) => {
   try {
     await order.save();
   } catch (error) {
-    // A concurrent request (webhook + confirm-payment) may have already
-    // recorded this order. Fall back to the existing document.
+    // Webhook + confirm can race — fall back to the saved order.
     if (error?.code === 11000) {
       const existing = await Order.findOne({ orderId: paymentIntentId });
       if (existing) {
@@ -275,8 +261,7 @@ const recordOrderFromSession = async (session) => {
   }
 
   if (isNewOrder) {
-    // Only the request that actually created the order decrements, so the
-    // webhook and confirm-payment paths never double-deduct.
+    // Only the creator decrements, so webhook + confirm-payment never double-deduct.
     const items = order.products || [];
     const decrements = await Promise.allSettled(
       items.map((item) => decrementStock(item.productId, item.quantity))
@@ -290,9 +275,7 @@ const recordOrderFromSession = async (session) => {
     );
 
     if (oversold) {
-      // A concurrent checkout drained stock between validation and payment.
-      // Compensate the decrements that did succeed and cancel the order so
-      // stock is never negative.
+      // Stock ran out between checkout and payment — undo what we took and cancel.
       await Promise.allSettled(
         decrements.map((result, index) =>
           result.status === "fulfilled" && result.value === true
@@ -301,8 +284,7 @@ const recordOrderFromSession = async (session) => {
         )
       );
 
-      // If the customer already paid, refund them so they are never charged
-      // for an order we cannot fulfil.
+      // They already paid, so refund them.
       if (isPaid) {
         try {
           await getStripe().refunds.create({ payment_intent: paymentIntentId });
@@ -327,8 +309,7 @@ const recordOrderFromSession = async (session) => {
       );
     } else if (isPaid) {
       try {
-        // Queue the email with a deterministic id so the webhook and the
-        // confirm-payment request cannot both enqueue it.
+        // Deterministic job id keeps the webhook and confirm request from both queueing it.
         const queued = await addEmailJob(
           "order-confirmation",
           { to: order.email, orderId: order.orderId, amount: order.amount },
@@ -336,7 +317,7 @@ const recordOrderFromSession = async (session) => {
         );
 
         if (!queued) {
-          // Redis disabled — send inline, as before.
+          // Redis down — send inline instead.
           await sendOrderConfirmationEmail({
             to: order.email,
             orderId: order.orderId,
@@ -352,7 +333,7 @@ const recordOrderFromSession = async (session) => {
   return order;
 };
 
-//confirm payment
+// Confirm payment
 const confirmPayment = asyncHandler(async (req, res) => {
   const stripe = getStripe();
   const { sessionId } = req.body;
@@ -388,8 +369,7 @@ const markOrderCanceled = async (paymentIntentId) => {
     time: new Date(),
   });
 
-  // A recorded (pending) order has already decremented stock, so give it back
-  // unless it was restored before.
+  // A pending order already took stock, so give it back unless we already did.
   if (!order.stockRestored) {
     await restoreStockForOrder(order);
     order.stockRestored = true;
@@ -398,9 +378,7 @@ const markOrderCanceled = async (paymentIntentId) => {
   await order.save();
 };
 
-// Stripe webhook: records paid orders even when the redirect back to the
-// store fails (e.g. the browser closes right after the payment succeeds),
-// and marks orders canceled when the payment fails.
+// Stripe webhook records paid orders (even if the browser closes early) and cancels failed ones.
 const stripeWebhook = asyncHandler(async (req, res) => {
   const stripe = getStripe();
   const signature = req.headers["stripe-signature"];
@@ -420,20 +398,19 @@ const stripeWebhook = asyncHandler(async (req, res) => {
       expand: ["line_items.data.price.product", "payment_intent"],
     });
 
-    // Only record the order when the payment actually succeeded.
+    // Only record the order once the payment actually went through.
     if (session.payment_status === "paid" && session.payment_intent?.status === "succeeded") {
       await recordOrderFromSession(session);
     }
   } else if (event.type === "payment_intent.payment_failed") {
     await markOrderCanceled(event.data.object.id);
   }
-  // "checkout.session.expired" is acknowledged: sessions that never produced
-  // a payment intent have no recorded order, so there is nothing to update.
+  // Expired sessions are a no-op — no payment intent, nothing to record.
 
   res.status(200).json({ received: true });
 });
 
-//get the signed-in user's own orders (email comes from the token, never the URL)
+// Get the signed-in user's own orders (email from token, not URL).
 const getMyOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ email: req.user.email, isDeleted: false })
     .populate("products.productId", "name price images isDeleted")
@@ -525,7 +502,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   order.status = status;
 
-  // Restore inventory once when an order is canceled (covers refunds too).
+  // Return stock the first time an order is canceled.
   if (statusChanged && status === "canceled" && !order.stockRestored) {
     await restoreStockForOrder(order);
     order.stockRestored = true;
@@ -542,7 +519,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       });
 
       if (!queued) {
-        // Redis disabled — send inline, as before.
+        // Redis down — send inline instead.
         await sendOrderStatusEmail({
           to: order.email,
           orderId: order.orderId,

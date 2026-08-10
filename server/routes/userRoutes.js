@@ -35,12 +35,12 @@ const uploadAvatar = (req, res, next) => {
   });
 };
 
-// get all users
+// Get all users
 router.get('/', verifyToken, adminOnly, userCtrls.getAllUsers);
 
 
 
-// update user (profile only)
+// Update user (profile only)
 router.patch(
   '/:id/profile',
   uploadLimiter,

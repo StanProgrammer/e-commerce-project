@@ -16,7 +16,7 @@ const OrderSummary = () => {
     dispatch(clearCart());
   };
 
-  //payment integration
+  // Payment integration
   const handleCheckout = async () => {
     try {
       setRedirecting(true);

@@ -15,7 +15,7 @@ router.patch(
   adminCtrls.updateUserRole
 );
 
-// delete user (soft delete)
+// Delete user (soft delete)
 router.delete('/:id', writeLimiter, verifyToken, adminOnly, adminCtrls.deleteUser);
 module.exports = router;
 

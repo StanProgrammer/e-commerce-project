@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const asyncHandler = require('../middlewares/asyncHandler');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { clearCookieOptions, cookieOptions, generateToken } = require('../utils/helper');
+const { clearCookieOptions, cookieOptions, generateToken, parseExpiryToMs } = require('../utils/helper');
 const { config } = require('../config/env');
 const { sendPasswordResetEmail } = require('../utils/email');
 const { addEmailJob } = require('../queues/emailQueue');
@@ -38,7 +38,7 @@ const buildUniqueUsername = async (baseName) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  // after validateBody, req.body contains sanitized fields only
+  // validateBody already sanitized req.body
   const { username, email, password, profilePic = '' } = req.body;
 
   // check duplicates against ACTIVE accounts (username OR email)
@@ -61,16 +61,14 @@ const register = asyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(password, salt);
 
-  // If a soft-deleted account holds this username/email, reactivate it with
-  // the fresh credentials instead of permanently locking the identity.
+  // A soft-deleted account with these credentials gets reactivated instead.
   const deletedUser = await User.findOne({
     $or: [{ username: username }, { email: email }],
     isDeleted: true,
   });
 
   if (deletedUser) {
-    // Make sure no OTHER deleted account is blocking the new credentials
-    // (unique indexes still include soft-deleted documents).
+    // Make sure no OTHER deleted account blocks the new credentials.
     const blocker = await User.exists({
       _id: { $ne: deletedUser._id },
       isDeleted: true,
@@ -130,10 +128,9 @@ const register = asyncHandler(async (req, res) => {
     }
     throw error;
   }
-  // Set cookie
+  // Set cookie and return minimal user info
   res.cookie('token', generateToken(user), cookieOptions);
 
-  // return minimal user info
   return res.status(201).json({
     message: 'User created',
     user: buildUserResponse(user),
@@ -147,7 +144,7 @@ const login = asyncHandler(async (req, res) => {
   // Find user 
   const user = await User.findOne({ email,isDeleted: false });
   if (!user || user.isDeleted) {
-    //generic message
+    // Generic message
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
 
@@ -156,12 +153,9 @@ const login = asyncHandler(async (req, res) => {
   if (!isMatch) {
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
-  // Set cookie (30 days when "remember me" is checked, otherwise the default
-  // lifetime derived from config.jwtExpires).
+  // 30 days with "remember me", otherwise the default JWT lifetime.
   const expiresIn = remember ? "30d" : config.jwtExpires;
-  const maxAge = remember
-    ? 1000 * 60 * 60 * 24 * 30
-    : cookieOptions.maxAge;
+  const maxAge = remember ? parseExpiryToMs("30d") : cookieOptions.maxAge;
 
   res.cookie("token", generateToken(user, expiresIn), {
     ...cookieOptions,
@@ -280,9 +274,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const resetUrl = `${config.passwordResetClientUrl}/reset-password/${resetToken}`;
 
-  // Prefer the email queue so the response is not blocked on SMTP and the
-  // email gets automatic retries. When Redis is disabled, fall back to
-  // sending inline with the previous error handling.
+  // Queue the email so SMTP never blocks the response; send inline if Redis is down.
   const queued = await addEmailJob("password-reset", {
     to: user.email,
     resetUrl,

@@ -1,9 +1,4 @@
-// Admin-protected Bull Board dashboard for monitoring the BullMQ queues in
-// the browser. server.js mounts the returned router at /api/queues behind the
-// verifyToken + adminOnly middlewares.
-//
-// Uses the Bull Board v8 API: createBullBoard (@bull-board/api) + ExpressAdapter
-// (@bull-board/express) + BullMQAdapter (@bull-board/api/bullMQAdapter).
+// Admin-protected Bull Board dashboard for monitoring BullMQ queues.
 const { createBullBoard } = require("@bull-board/api");
 const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
 const { ExpressAdapter } = require("@bull-board/express");
@@ -16,8 +11,7 @@ serverAdapter.setBasePath("/api/queues");
 
 let initialized = false;
 
-// Returns the Bull Board router, or null when Redis is disabled (there are no
-// queues to monitor).
+// Returns the Bull Board router, or null when Redis is disabled (no queues).
 const getBullBoardRouter = () => {
   if (!getQueueConnection()) {
     return null;

@@ -30,22 +30,15 @@ const DEFAULT_OPTIONS = {
   resource_type: "auto",
   invalidate: true,
   folder: "uploads", // optional but recommended
-  // Deliver optimized images by default: cap the long edge, strip metadata,
-  // and let Cloudinary pick the best compression level for each format.
+  // Cap the long edge at 1400px and let Cloudinary pick the best quality.
   transformation: [{ width: 1400, crop: "limit", quality: "auto" }],
 };
 
-/**
- * Upload image to Cloudinary
- * @param {string} file - local path, base64, or URL
- * @param {object} customOptions - optional overrides
- * @returns {Promise<string>} secure_url
- */
+// Upload to Cloudinary; returns the secure URL.
 const uploadToCloudinary = async (file, customOptions = {}) => {
   try {
     configureCloudinary();
 
-    // Input validation
     if (!file) {
       throw new Error("No file provided for upload");
     }
@@ -60,10 +53,8 @@ const uploadToCloudinary = async (file, customOptions = {}) => {
 
     return result.secure_url;
   } catch (error) {
-    // Better logging (can replace with Winston later)
     console.error("Cloudinary Upload Error:", error.message);
 
-    // Normalize error
     throw new Error(
       error?.message || "Something went wrong while uploading to Cloudinary"
     );

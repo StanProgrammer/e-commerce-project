@@ -10,7 +10,7 @@ export const productsApi = createApi({
   tagTypes: ["Products"],
   endpoints: (builder) => ({
 
-    // FETCH ALL PRODUCTS (LIST + INDIVIDUAL TAGS)
+    // Fetch all products
     fetchAllProducts: builder.query({
       query: ({
         category,
@@ -25,8 +25,9 @@ export const productsApi = createApi({
 
         if (category) params.append("category", category);
         if (color) params.append("color", color);
-        if (minPrice) params.append("minPrice", String(minPrice));
-        if (maxPrice) params.append("maxPrice", String(maxPrice));
+        // 0 is a valid price floor — only skip truly missing values.
+        if (minPrice !== undefined && minPrice !== null) params.append("minPrice", String(minPrice));
+        if (maxPrice !== undefined && maxPrice !== null) params.append("maxPrice", String(maxPrice));
         if (search) params.append("search", search);
 
         params.append("page", String(page));
@@ -35,7 +36,6 @@ export const productsApi = createApi({
         return `/?${params.toString()}`;
       },
 
-      // 🔥 IMPORTANT FIX
       providesTags: (result) =>
         result?.products
           ? [
@@ -48,7 +48,7 @@ export const productsApi = createApi({
           : [{ type: "Products", id: "LIST" }],
     }),
 
-    // GET SINGLE PRODUCT
+    // Get single product
     getSingleProduct: builder.query({
       query: (id) => `/${id}`,
       providesTags: (result, error, id) => [
@@ -56,7 +56,7 @@ export const productsApi = createApi({
       ],
     }),
 
-    // ADD PRODUCT
+    // Add product
     addProduct: builder.mutation({
       query: (newProduct) => ({
         url: "/create-product",
@@ -66,7 +66,7 @@ export const productsApi = createApi({
       invalidatesTags: [{ type: "Products", id: "LIST" }],
     }),
 
-    // UPDATE PRODUCT 
+    // Update product
     updateProduct: builder.mutation({
       query: ({ id, formData }) => ({
         url: `/update-product/${id}`,
@@ -80,13 +80,13 @@ export const productsApi = createApi({
       ],
     }),
 
-    // RELATED PRODUCTS
+    // Related products
     fetchRelatedProducts: builder.query({
       query: (id) => `/related-products/${id}`,
       providesTags: [{ type: "Products", id: "LIST" }],
     }),
 
-    // QUICK STOCK UPDATE (admin table inline editor)
+    // Quick stock update (admin table inline editor)
     updateStock: builder.mutation({
       query: ({ id, stock }) => ({
         url: `/update-stock/${id}`,
@@ -99,7 +99,7 @@ export const productsApi = createApi({
       ],
     }),
 
-    // DELETE PRODUCT
+    // Delete product
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `/delete-product/${id}`,

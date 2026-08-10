@@ -1,6 +1,4 @@
-// Producer for the "admin" queue (scheduled maintenance jobs such as
-// low-stock alerts and soft-delete purging). Consumers + cron schedules live
-// in server/workers/index.js and server/workers/adminWorker.js.
+// Producer for the "admin" queue (low-stock alerts, soft-delete purging).
 const { Queue } = require("bullmq");
 const { getQueueConnection } = require("./connection");
 
@@ -14,8 +12,7 @@ const getAdminQueue = () => {
     return null;
   }
 
-  // Rebuild the queue if the connection was replaced (e.g. Redis went down and
-  // getQueueConnection() created a fresh one).
+  // Rebuild when Redis reconnects with a fresh connection.
   if (!queue || queueConnection !== connection) {
     queue = new Queue("admin", { connection });
     queueConnection = connection;

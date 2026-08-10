@@ -14,18 +14,14 @@ import { policyApi } from "./features/policy/policyApi";
 import { feedbackApi } from "./features/feedback/feedbackApi";
 import { contactApi } from "./features/contact/contactApi";
 
-/* =========================
-   Persist Configuration
-========================= */
+/* Persist config */
 const persistConfig = {
   key: "root",
   storage,
   whitelist: ["cart", "auth"], // persist only these slices
 };
 
-/* =========================
-   Combine All Reducers
-========================= */
+/* Combine reducers */
 const appReducer = combineReducers({
   cart: cartReducer,
   auth: authReducer,
@@ -40,9 +36,7 @@ const appReducer = combineReducers({
   [contactApi.reducerPath]: contactApi.reducer,
 });
 
-/* =========================
-   Root Reducer (Reset on Logout)
-========================= */
+/* Root reducer — resets on logout */
 const rootReducer = (state, action) => {
   if (action.type === "auth/logout") {
     state = undefined; // clears entire Redux store
@@ -50,14 +44,10 @@ const rootReducer = (state, action) => {
   return appReducer(state, action);
 };
 
-/* =========================
-   Persisted Reducer
-========================= */
+/* Persisted reducer */
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-/* =========================
-   Store
-========================= */
+/* Store */
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>

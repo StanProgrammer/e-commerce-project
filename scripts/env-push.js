@@ -1,29 +1,12 @@
 #!/usr/bin/env node
 "use strict";
 
-/**
- * env-push — push local env files to Render and Vercel so you never have to
- * touch the dashboards again.
- *
- *   npm run env:push            # sync Render + Vercel with local env files
- *   npm run env:push:deploy     # also trigger a Render deploy afterwards
- *   npm run env:push:dry        # preview changes without sending anything
- *   npm run env:push -- --prune # also remove remote keys no longer local
- *   npm run env:push -- --only=vercel
- *
- * Source of truth (see TARGETS below):
- *   Render <- server/.env.production   (REST API, PUT /v1/services/{id}/env-vars)
- *   Vercel <- client/.env.production   (REST API, project env records)
- *
- * Credentials come from .env.push (gitignored — see .env.push.example) or
- * from exported environment variables:
- *   RENDER_API_KEY, RENDER_SERVICE_ID (or RENDER_SERVICE_IDS=a,b)
- *   VERCEL_TOKEN, VERCEL_PROJECT_ID
- *
- * Safety: values are NEVER printed in full (masked only), `--dry-run` is
- * available, and existing values are never changed remotely unless they
- * differ from the local file.
- */
+// Push local env files to Render + Vercel so you never touch the dashboards.
+//   env:push              sync both providers
+//   env:push --deploy     also trigger a Render deploy
+//   env:push --dry-run    preview without sending
+// Credentials come from .env.push (see .env.push.example) or real env vars.
+// Values are never printed in full — only masked.
 
 const path = require("path");
 const { readIfExists, parseEnv, getVars, maskSecret } = require("./env-utils");
@@ -51,9 +34,7 @@ const yellow = (t) => color(33, t);
 const red = (t) => color(31, t);
 const dim = (t) => color(2, t);
 
-/**
- * Load credentials from .env.push (gitignored) overlaid with real env vars.
- */
+// Load credentials from .env.push, overlaid with real env vars.
 function loadCredentials() {
   const creds = {};
   const file = path.join(ROOT, ".env.push");
@@ -89,7 +70,7 @@ async function api(base, pathname, { token, method = "GET", body } = {}) {
   }
 
   if (!res.ok) {
-    // Vercel nests errors as { error: { code, message } }; Render as { message }.
+    // Vercel nests errors as { error }, Render as { message }.
     const errMsg =
       json && typeof json.error === "object" && json.error
         ? json.error.message || json.error.code
@@ -107,16 +88,7 @@ function missingCred(name, hint) {
   process.exitCode = 1;
 }
 
-/**
- * Fetch ALL env vars for a Render service by following cursor pagination.
- *
- * GET /v1/services/{id}/env-vars returns a bare array of
- * `{ envVar: { key, value }, cursor }` records. The page size is fixed at 20
- * (the `limit` query parameter is ignored), so services with more than 20
- * vars require following the `cursor` of the last record on each page until an
- * empty page is returned. Values set via Render environment groups are not
- * visible through this endpoint.
- */
+// Fetch ALL env vars for a Render service, following cursor pagination (20/page).
 async function fetchAllRenderEnvVars(token, serviceId) {
   const remote = new Map();
   let cursor = "";
@@ -209,10 +181,7 @@ async function pushRender(creds, vars, { dryRun, prune, deploy }) {
       return;
     }
 
-    // PUT replaces the whole list, so verify every intended var actually
-    // persisted. The list endpoint is cursor-paginated (20 per page), so the
-    // read must follow every page before concluding a var was dropped —
-    // otherwise services with >20 vars always look "truncated".
+    // PUT replaces the whole list, so verify every var actually persisted.
     let after = new Map();
     try {
       after = await fetchAllRenderEnvVars(token, id);
@@ -258,8 +227,7 @@ async function pushVercel(creds, vars, { dryRun, prune }) {
     );
   }
 
-  // Projects under a Vercel team need `?teamId=` on env API calls (env listing
-  // returns an empty list without it). Derive it from the project record.
+  // Team projects need ?teamId= on env API calls; derive it from the project record.
   let teamQuery = "";
   try {
     const project = await api(VERCEL_API, `/v6/projects/${projectId}`, { token });

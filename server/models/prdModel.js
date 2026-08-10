@@ -8,6 +8,15 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Unique auto-generated SKU (e.g. WATCH-BLK-001); sparse so legacy items still work.
+    sku: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      uppercase: true,
+    },
+
     category: {
       type: String,
       required: true,
@@ -33,8 +42,7 @@ const productSchema = new mongoose.Schema(
       min: 0,
     },
 
-    // Inventory count. When absent/undefined the product is treated as
-    // unlimited stock so existing catalog items keep working unchanged.
+    // Inventory count; absent means unlimited stock.
     stock: {
       type: Number,
       min: 0,

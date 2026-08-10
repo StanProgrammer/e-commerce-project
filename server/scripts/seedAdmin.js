@@ -10,8 +10,7 @@ const bcrypt = require("bcryptjs");
 const { config, validateCoreEnv } = require("../config/env");
 const User = require("../models/userModel");
 
-// Credentials can be overridden via env vars (e.g. ADMIN_PASSWORD="..." node scripts/seedAdmin.js)
-// so the committed defaults are only ever used in local/test environments.
+// Credentials come from env vars; committed defaults are only for local/test use.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@willowrue.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@1234";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
@@ -68,7 +67,7 @@ run().catch(async (err) => {
   try {
     await mongoose.connection.close();
   } catch {
-    // ignore close errors
+    // Ignore close errors
   }
   process.exit(1);
 });

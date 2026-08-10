@@ -25,8 +25,12 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.authChecked = true;
     },
+    // Session check failed on a blip — keep the persisted user instead of wiping it.
+    markAuthCheckedKeepUser: (state) => {
+      state.authChecked = true;
+    },
   },
 });
 
-export const { setUser, logout, markAuthChecked } = authSlice.actions;
+export const { setUser, logout, markAuthChecked, markAuthCheckedKeepUser } = authSlice.actions;
 export default authSlice.reducer;

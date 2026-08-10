@@ -1,4 +1,4 @@
-// middleware/asyncHandler.js
 module.exports = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
+  // Returning the promise lets tests await controllers; Express ignores it.
+  return Promise.resolve(fn(req, res, next)).catch(next);
 };

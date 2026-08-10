@@ -11,9 +11,7 @@ const computeStatsForEmail = async (email) => {
     return null;
   }
 
-  // Total spent + total purchased
-  // NOTE: amount is summed per order (not per product line), while the
-  // purchased item count is summed across unwound product lines.
+  // Amount sums per order; item count sums across product lines.
   const [orderStats] = await Order.aggregate([
     { $match: { email, isDeleted: false } },
     {

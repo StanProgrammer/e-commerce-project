@@ -122,8 +122,7 @@ const FeedbackWidget = () => {
   const [submitStatus, setSubmitStatus] = useState("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Declared above the effects below: the outside-click/Escape effect depends
-  // on closeFeedback, and closeFeedback depends on resetFeedbackSession.
+  // closeFeedback and resetFeedbackSession must be declared before the effect below.
   const resetFeedbackSession = useCallback(() => {
     setActiveType("bug");
     setSubmittedMessage("");

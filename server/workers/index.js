@@ -1,7 +1,4 @@
-// Background worker process for BullMQ. Run with: npm run worker
-//
-// Loads the same environment files as server.js, then starts the email and
-// admin workers and registers the recurring (cron) jobs via job schedulers.
+// BullMQ worker process (npm run worker); starts email + admin workers and cron.
 require("dotenv").config({ quiet: true });
 require("dotenv").config({
   path:
@@ -15,8 +12,7 @@ const { getWorkerConnection } = require("../queues/connection");
 const emailProcessor = require("./emailWorker");
 const adminProcessor = require("./adminWorker");
 
-// Recurring jobs registered as BullMQ job schedulers. upsertJobScheduler is
-// idempotent, so re-registering on every boot is safe.
+// Recurring cron jobs; upsertJobScheduler is idempotent, so re-registering is safe.
 const SCHEDULERS = [
   {
     schedulerId: "low-stock-check",
@@ -38,8 +34,7 @@ const start = async () => {
     process.exit(0);
   }
 
-  // The worker connection retries forever, so surface its lifecycle so a
-  // Redis outage is visible in the logs instead of silent.
+  // Log the worker connection lifecycle so a Redis outage is visible.
   connection.on("connecting", () => console.log("[worker] Connecting to Redis..."));
   connection.on("ready", () => console.log("[worker] Redis connected."));
   connection.on("error", (error) =>
@@ -81,6 +76,7 @@ const start = async () => {
   const shutdown = async (signal) => {
     console.log(`[worker] ${signal} received — closing workers...`);
 
+    // Hard exit if graceful shutdown hangs
     const forceExit = setTimeout(() => process.exit(1), 15000);
     forceExit.unref();
 

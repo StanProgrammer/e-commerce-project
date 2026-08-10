@@ -68,7 +68,7 @@ const postReview = asyncHandler(async (req, res) => {
     makeKey("products", "detail", productId),
   ]);
 
-  // 4. Send differentiated message
+  // Send a targeted message
   const message = existingReview 
     ? "Review updated successfully" 
     : "Review submitted successfully";

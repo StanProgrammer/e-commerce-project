@@ -4,7 +4,7 @@ import "chart.js/auto";
 import MessageState from "../../../components/MessageState";
 
 const AdminStatsChart = ({ stats }) => {
-  // 🧠 Memoized Pie Data
+  // Memoized pie data
   const pieData = useMemo(() => {
     return {
       labels: ["Total Reviews", "Total Orders", "Total Users", "Total Products"],
@@ -19,7 +19,7 @@ const AdminStatsChart = ({ stats }) => {
     };
   }, [stats]);
 
-  // 🧠 Memoized Line Data
+  // Memoized line data
   const lineData = useMemo(() => {
     const monthlyData = new Array(12).fill(0);
 

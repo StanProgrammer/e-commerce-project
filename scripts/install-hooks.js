@@ -11,12 +11,11 @@ if (!fs.existsSync(hooksDir)) {
   fs.mkdirSync(hooksDir, { recursive: true });
 }
 
-// Ensure the hook is executable — git silently skips non-executable hooks on
-// macOS/Linux. No-op on Windows.
+// git skips non-executable hooks on macOS/Linux; no-op on Windows.
 try {
   execFileSync("chmod", ["+x", path.join(hooksDir, "pre-push")]);
 } catch {
-  /* chmod may be unavailable on Windows — ignore */
+  /* chmod may not exist on Windows — ignore */
 }
 
 try {

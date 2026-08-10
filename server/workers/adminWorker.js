@@ -1,5 +1,4 @@
-// Processors for scheduled admin jobs: low-stock alerts and cleanup of
-// soft-deleted records.
+// Scheduled admin job processors: low-stock alerts and soft-delete cleanup.
 const Product = require("../models/prdModel");
 const Order = require("../models/orderModel");
 const Blog = require("../models/blogModel");
@@ -30,8 +29,7 @@ const runLowStockCheck = async (job) => {
   return { checked: true, lowStock: products.length };
 };
 
-// Hard-delete soft-deleted orders and blogs older than N days. Products and
-// users are intentionally left alone because orders and reviews reference them.
+// Hard-delete old soft-deleted orders/blogs; products and users are kept.
 const runSoftDeletePurge = async (job) => {
   const olderThanDays = Number(
     job.data.olderThanDays ?? config.jobs.purgeAfterDays

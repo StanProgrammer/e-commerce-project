@@ -15,8 +15,7 @@ const buildTestApp = () => {
   app.use("/api/orders", orderRoutes);
   app.use("/api/products", productRoutes);
 
-  // Mirrors server.js: the Stripe webhook needs the raw body for signature
-  // verification, so it is mounted before the JSON body parser.
+  // The Stripe webhook needs the raw body, so mount it before the JSON parser.
   app.post(
     "/api/orders/webhook",
     express.raw({ type: "application/json" }),
