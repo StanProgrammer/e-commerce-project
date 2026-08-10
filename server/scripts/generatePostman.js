@@ -1,10 +1,5 @@
-/**
- * Generates:
- *   1. server/swagger.json  — the raw OpenAPI spec (also served at /api-docs.json)
- *   2. server/postman/collection.json — a ready-to-import Postman collection
- *
- * Usage:  npm run docs:postman   (from the server directory)
- */
+// Generates server/swagger.json and a ready-to-import Postman collection.
+// Usage: npm run docs:postman (from the server directory)
 const fs = require("fs");
 const path = require("path");
 const { convert } = require("openapi-to-postmanv2");

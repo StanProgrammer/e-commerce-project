@@ -1,5 +1,4 @@
-// Shared stock-status helper used by the storefront and admin panels.
-// Keep in sync with the server's LOW_STOCK_THRESHOLD default (config/env.js).
+// Shared by storefront + admin; keep the threshold in sync with the server default.
 export const LOW_STOCK_THRESHOLD = 5;
 
 export const STOCK_STATUS_META = {
@@ -9,11 +8,7 @@ export const STOCK_STATUS_META = {
   unlimited: { label: "Unlimited", emoji: "∞" },
 };
 
-/**
- * Classify a product's stock level.
- * Returns `{ tracksStock, status, label, stock }` where `status` is one of
- * "in" | "low" | "out" | "unlimited".
- */
+// Classifies stock as unlimited, out, low, or in.
 export const getStockInfo = (stock, lowThreshold = LOW_STOCK_THRESHOLD) => {
   const tracksStock =
     stock !== undefined && stock !== null && stock !== "";

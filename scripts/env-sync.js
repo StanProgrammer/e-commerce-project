@@ -1,23 +1,11 @@
 #!/usr/bin/env node
 "use strict";
 
-/**
- * env-sync — keep local .env files in sync with the committed .env.example
- * files, and keep scripts/env-manifest.json (the committed "expected keys"
- * snapshot used by CI) in sync too.
- *
- *   npm run env:sync            # add keys missing from local env files
- *   npm run env:sync -- --prune # also remove keys no longer in .env.example
- *   npm run env:check           # report drift; exit 1 when out of sync
- *   npm run env:sync -- --dry-run
- *
- * Behavior:
- *   - Never overwrites an existing value. Only ADDS missing keys (value is
- *     copied from the first sibling file that has one, else left empty) and,
- *     with --prune, REMOVES keys absent from the example.
- *   - `--check` writes nothing and exits 1 if any file is missing example
- *     keys or the manifest is stale (used by CI and the pre-push hook).
- */
+// Keep local .env files in sync with .env.example and the CI manifest.
+//   env:sync          add missing keys
+//   env:sync --prune  also drop keys no longer in .env.example
+//   env:check         exit 1 when out of sync (CI + pre-push hook)
+// Never overwrites existing values — only adds missing keys.
 
 const fs = require("fs");
 const path = require("path");
@@ -32,8 +20,7 @@ const EXAMPLES = [
 
 const MANIFEST = path.join(ROOT, "scripts", "env-manifest.json");
 
-// Order matters: the first sibling with a non-empty value wins when a key is
-// missing from the target file, so "set it once, synced everywhere" works.
+// First sibling with a value wins, so "set it once, synced everywhere" works.
 const TARGETS = [
   { file: "server/.env", example: "server/.env.example", siblings: ["server/.env.production", "server/.env.local"] },
   { file: "server/.env.local", example: "server/.env.example", siblings: ["server/.env", "server/.env.production"] },
@@ -108,9 +95,7 @@ function syncFile(target, { check, prune, dryRun }) {
   });
 
   const stale = [...existing].filter((k) => !exampleKeys.includes(k));
-  // `--check` never prunes: it only fails on MISSING keys. `--prune` removes
-  // stale keys even when there are no additions (a fully-synced file can
-  // still contain keys that left .env.example).
+  // --check only fails on missing keys; --prune removes stale ones.
   const toRemove = check ? [] : prune ? stale : [];
 
   if (additions.length === 0 && toRemove.length === 0) {
@@ -128,8 +113,7 @@ function syncFile(target, { check, prune, dryRun }) {
       `  • ${target.file}: would update ${yellow(`(+${additions.length} keys${toRemove.length ? `, -${toRemove.length} pruned` : ""})`)}`
     );
   } else {
-    // Preserve the original line-ending style: existing `raw` lines keep any
-    // trailing `\r`; only appended lines get an explicit `\r` suffix.
+    // Preserve the original line-ending style.
     const eol = detectEol(content);
     const crlf = eol === "\r\n" ? "\r" : "";
     const parts = lines
@@ -179,8 +163,7 @@ function readManifest() {
   }
 }
 
-// Order-sensitive on purpose: reordering keys in .env.example is a real change
-// (key order is part of the contract), so it correctly flags a stale manifest.
+// Key order matters — it's part of the contract, so reordering flags a stale manifest.
 function isManifestEqual(m1, m2) {
   if (!m1) return false;
   for (const e of EXAMPLES) {

@@ -6,10 +6,10 @@ const adminOnly = require('../middlewares/adminOnly');
 
 router.get('/user-stats/mine', verifyToken, statsCtrls.getMyStats);
 
-//admin-only lookup by email
+// Admin-only lookup by email
 router.get('/user-stats/:email', verifyToken, adminOnly, statsCtrls.getUserStats);
 
-//admin
+// Admin
 router.get('/admin-stats', verifyToken, adminOnly, statsCtrls.getAdminStats);
 
 module.exports = router;

@@ -25,7 +25,7 @@ const PrdCard = ({ products }) => {
       return;
     }
 
-    //dispatch action to add product to cart
+    // Dispatch add-to-cart
     dispatch(addToCart(product));
     toast.success(`${product.name} added to cart`, {
       id: product._id, // prevents duplicate

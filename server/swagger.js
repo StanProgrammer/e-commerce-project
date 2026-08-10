@@ -1354,6 +1354,7 @@ const swaggerSpec = {
         type: "object",
         properties: {
           _id: { $ref: "#/components/schemas/ObjectId" },
+          sku: { type: "string", description: "Auto-generated unique identifier, e.g. WATCH-BLK-001" },
           name: { type: "string" },
           category: { type: "string" },
           description: { type: "string" },

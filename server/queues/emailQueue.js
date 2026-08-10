@@ -1,5 +1,4 @@
-// Producer for the "emails" queue (order confirmation, order status and
-// password reset emails). See server/workers/emailWorker.js for the consumer.
+// Producer for the "emails" queue; see workers/emailWorker.js for the consumer.
 const { Queue } = require("bullmq");
 const { getQueueConnection } = require("./connection");
 
@@ -13,8 +12,7 @@ const getEmailQueue = () => {
     return null;
   }
 
-  // Rebuild the queue if the connection was replaced (e.g. Redis went down and
-  // getQueueConnection() created a fresh one).
+  // Rebuild the queue if Redis went down and a fresh connection was created.
   if (!queue || queueConnection !== connection) {
     queue = new Queue("emails", { connection });
     queueConnection = connection;
@@ -23,9 +21,7 @@ const getEmailQueue = () => {
   return queue;
 };
 
-// Add an email job when Redis/BullMQ is available; returns null when it is
-// not (Redis disabled, or unreachable), so callers fall back to sending inline
-// — mirroring the cache SKIP/BYPASS behaviour used when Redis is disabled.
+// Add an email job, or return null when Redis is down so callers send inline.
 const addEmailJob = async (name, data, options = {}) => {
   const emailQueue = getEmailQueue();
 

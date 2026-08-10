@@ -12,8 +12,7 @@ const UploadImage = ({
   
   const [newPreviews, setNewPreviews] = useState([]);
   const fileInputRef = useRef(null);
-  // Keep the latest preview list in a ref so effects that revoke blob URLs
-  // (reset / unmount) do not need to re-run whenever preview changes.
+  // Keep the latest previews in a ref so cleanup effects can revoke blob URLs.
   const newPreviewsRef = useRef(newPreviews);
 
   useEffect(() => {
@@ -24,7 +23,7 @@ const UploadImage = ({
   const MAX_FILES = 5;
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-  // Display order: existing images first, then newly added previews.
+  // Existing images first, then new uploads.
   const displayedImages = [...existingImages, ...newPreviews];
 
   // Reset from parent
@@ -90,9 +89,7 @@ const UploadImage = ({
   };
 
   const handleRemove = (index) => {
-    // The index is into the combined preview (existing + new). Existing
-    // images live at the front of the list; report those removals to the
-    // parent so they are not re-submitted.
+    // Existing images are first; tell the parent when one is removed.
     if (index < existingImages.length) {
       onRemoveExisting?.(existingImages[index]);
       return;
@@ -109,7 +106,7 @@ const UploadImage = ({
       return updated;
     });
 
-    // Only removes newly added images (safe) — same index space as newPreviews.
+    // Removes newly added images only — same index space as newPreviews.
     setImage((prev) => prev.filter((_, i) => i !== newIndex));
 
     if (fileInputRef.current) {

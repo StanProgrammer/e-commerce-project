@@ -4,8 +4,7 @@ import App from "../App.jsx";
 import PageSuspense from "../components/PageSuspense";
 import Privateroutes from "./Privateroutes.jsx";
 
-// Wraps a lazy page in its own Suspense boundary so routes that render
-// outside <App> (login, register, ...) also get a loading fallback.
+// Give each lazy route its own Suspense fallback.
 const lazyElement = (importer) => {
   const Component = lazy(importer);
 

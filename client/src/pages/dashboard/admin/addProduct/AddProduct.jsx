@@ -79,7 +79,7 @@ const handleSubmit = async (e) => {
     const formData = new FormData();
 
     Object.entries(product).forEach(([key, value]) => {
-      // Skip empty optional fields (e.g. stock left blank = unlimited).
+      // Skip empty optional fields (blank stock = unlimited).
       if (value !== "") {
         formData.append(key, value);
       }

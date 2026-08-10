@@ -21,11 +21,11 @@ const Navbar = () => {
 
   // show user if logged in
   const { user } = useSelector((state) => state.auth);
-  //dropdown for user options
+  // Dropdown for user options
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const toggleDropdown = () => setIsDropdownOpen((prev) => !prev);
 
-  //logout
+  // Logout
   const [logoutApi] = useLogoutUserMutation();
 
   const dispatch = useDispatch();

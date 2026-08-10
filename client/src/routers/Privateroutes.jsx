@@ -29,7 +29,7 @@ const Privateroutes = ({ children, role }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (role && user.role !== role && user.role !== 'admin') {
-    // User does not have the required role, redirect to unauthorized page or home
+    // Redirect when the role doesn't match
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 

@@ -40,7 +40,12 @@ const uploadBlogImage = async (file) => {
 };
 
 const getAllBlogs = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 12, includeDrafts = false } = req.query;
+  const { page = 1, limit = 12 } = req.query;
+
+  // Accept both the boolean and string forms, so "false" is never truthy.
+  const includeDrafts =
+    req.query.includeDrafts === true || req.query.includeDrafts === "true";
+
   const currentPage = Math.max(Number(page), 1);
   const numericLimit = Number(limit);
   const skip = (currentPage - 1) * numericLimit;

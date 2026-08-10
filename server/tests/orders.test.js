@@ -384,6 +384,98 @@ describe("POST /api/orders/webhook", () => {
   });
 });
 
+describe("POST /api/orders/confirm-payment", () => {
+  const mixedSession = {
+    id: "cs_mixed",
+    payment_intent: { id: "pi_mixed", status: "succeeded" },
+    payment_status: "paid",
+    customer_details: { email: "buyer@example.com" },
+    amount_total: 5000,
+    line_items: {
+      data: [
+        // Tracked product: stock must be decremented atomically.
+        { quantity: 2, price: { product: { metadata: { productId: "p1" } } } },
+        // Unlimited product (no stock field): must be skipped, never decremented.
+        { quantity: 3, price: { product: { metadata: { productId: "p2" } } } },
+      ],
+    },
+  };
+
+  it("records an order with mixed tracked + unlimited products in one order", async () => {
+    const client = getStripeClient();
+    client.checkout.sessions.retrieve.mockResolvedValue(mixedSession);
+    // decrementStock calls Product.findOne per line item: p1 (tracked, stock 5)
+    // first, then p2 (unlimited, no stock field).
+    Product.findOne
+      .mockResolvedValueOnce({ _id: "p1", stock: 5 })
+      .mockResolvedValueOnce({ _id: "p2" });
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .post("/api/orders/confirm-payment")
+      .set(auth)
+      .send({ sessionId: "cs_mixed" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.order.status).toBe("processing");
+
+    // Both line items end up on the recorded order.
+    expect(Order.__orders).toHaveLength(1);
+    expect(Order.__orders[0].products).toEqual([
+      { productId: "p1", quantity: 2 },
+      { productId: "p2", quantity: 3 },
+    ]);
+
+    // Only the tracked product is decremented — exactly one stock write.
+    expect(Product.updateOne).toHaveBeenCalledTimes(1);
+    expect(Product.updateOne).toHaveBeenCalledWith(
+      { _id: "p1", stock: { $gte: 2 } },
+      { $inc: { stock: -2 } }
+    );
+
+    // The unlimited product must never trigger a stock write (which would have
+    // treated it as oversold and canceled/refunded the whole paid order).
+    expect(Product.updateOne).not.toHaveBeenCalledWith(
+      { _id: "p2", stock: { $gte: 3 } },
+      { $inc: { stock: -3 } }
+    );
+    expect(Order.__orders[0].stockRestored).not.toBe(true);
+    expect(Order.__orders[0].status).toBe("processing");
+  });
+
+  it("cancels a mixed order only when the tracked item is oversold", async () => {
+    const client = getStripeClient();
+    client.checkout.sessions.retrieve.mockResolvedValue(mixedSession);
+    // p1 has only 1 unit but 2 were ordered (concurrent checkout drained it),
+    // so the tracked decrement fails; p2 is unlimited and succeeds.
+    Product.findOne
+      .mockResolvedValueOnce({ _id: "p1", stock: 1 })
+      .mockResolvedValueOnce({ _id: "p2" });
+    Product.updateOne.mockResolvedValueOnce({ modifiedCount: 0 }); // p1 fails
+    Product.updateOne.mockResolvedValueOnce({ modifiedCount: 1 }); // p1 restore
+
+    const res = await request(app)
+      .post("/api/orders/confirm-payment")
+      .set(auth)
+      .send({ sessionId: "cs_mixed" });
+
+    expect(res.status).toBe(200);
+    expect(Order.__orders).toHaveLength(1);
+    expect(Order.__orders[0].status).toBe("canceled");
+    expect(Order.__orders[0].stockRestored).toBe(true);
+  });
+
+  it("returns 400 when the session id is missing", async () => {
+    const res = await request(app)
+      .post("/api/orders/confirm-payment")
+      .set(auth)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain("Session ID is required");
+  });
+});
+
 describe("PATCH /api/orders/update-order-status/:id", () => {
   it("rejects invalid order ids", async () => {
     const res = await request(app)

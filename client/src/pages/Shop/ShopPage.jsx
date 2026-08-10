@@ -55,7 +55,7 @@ const ShopPage = () => {
     }
   }, [category, color, priceRange, currentPage, searchParams, setSearchParams]);
 
-  /* ---------------- PRICE PARSING ---------------- */
+  /* Price parsing */
   const [minPrice, maxPrice] = useMemo(() => {
     if (!priceRange) return [undefined, undefined];
 
@@ -71,7 +71,7 @@ const ShopPage = () => {
     return [Number.isNaN(min) ? undefined : min, Number.isNaN(max) ? undefined : max];
   }, [priceRange]);
 
-  /* ---------------- API CALL ---------------- */
+  /* API call */
   const { data, isLoading, isFetching, error } = useFetchAllProductsQuery({
     category: category !== "all" ? category : undefined,
     color: color !== "all" ? color : undefined,
@@ -84,7 +84,7 @@ const ShopPage = () => {
   const products = data?.products ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  /* ---------------- HELPERS ---------------- */
+  /* Helpers */
   const clearFilters = () => {
     setFiltersState({
       category: "all",
@@ -96,7 +96,7 @@ const ShopPage = () => {
 
   return (
     <>
-      {/* HEADER */}
+      {/* Header */}
       <section className="section__container bg-primary-light">
         <h2 className="section__header capitalize">Shop Page</h2>
         <p className="section__subheader">
@@ -105,10 +105,10 @@ const ShopPage = () => {
         </p>
       </section>
 
-      {/* CONTENT */}
+      {/* Content */}
       <section className="section__container">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-          {/* FILTERS */}
+          {/* Filters */}
           <ShopFilters
             filteredProducts={filtersState}
             setFilteredProducts={(updater) => {
@@ -124,7 +124,7 @@ const ShopPage = () => {
             filters={filters}
           />
 
-          {/* PRODUCTS */}
+          {/* Products */}
           <div className="min-w-0 flex-1">
             <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -168,7 +168,7 @@ const ShopPage = () => {
               <PrdCard products={products} />
             )}
 
-            {/* PAGINATION */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             )}

@@ -2,6 +2,7 @@ const Product = require("../models/prdModel.js");
 const Review = require("../models/reviewModel.js");
 const asyncHandler = require("../middlewares/asyncHandler.js");
 const uploadToCloudinary  = require("../utils/uploadImage.js");
+const { findVariantDuplicate, generateSku } = require("../utils/sku.js");
 const {
   invalidateMany,
   makeKey,
@@ -23,11 +24,26 @@ const invalidateProductCache = async (id) =>
     id ? productDetailKey(id) : null,
   ]);
 
-/* ================= CREATE PRODUCT ================= */
+/* Create product */
 const createProduct = asyncHandler(async (req, res) => {
   if (!req.files || req.files.length === 0) {
     throw new Error("No images uploaded");
   }
+
+  // Reject duplicates: same name + category + color must not appear twice.
+  const duplicate = await findVariantDuplicate({
+    name: req.body.name,
+    category: req.body.category,
+    color: req.body.color,
+  });
+  if (duplicate) {
+    return res.status(409).json({
+      message: "A product with this name, category and color already exists.",
+    });
+  }
+
+  // Assign a unique SKU (e.g. WATCH-BLK-001) before persisting.
+  const sku = await generateSku(req.body.name, req.body.color);
 
   // Upload all images
   const imageUrls = await Promise.all(
@@ -36,7 +52,19 @@ const createProduct = asyncHandler(async (req, res) => {
       return await uploadToCloudinary(base64);
     })
   );
-  const savedProduct = await Product.create({...req.body, author: req.user.sub, images: imageUrls});
+
+  let savedProduct;
+  try {
+    savedProduct = await Product.create({...req.body, sku, author: req.user.sub, images: imageUrls});
+  } catch (error) {
+    // Two concurrent creates could race on the same SKU (unique index).
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "A product with this name, category and color already exists.",
+      });
+    }
+    throw error;
+  }
 
   const reviews = await Review.find({ productId: savedProduct._id });
 
@@ -54,7 +82,7 @@ const createProduct = asyncHandler(async (req, res) => {
   });
 });
 
-/* ================= GET ALL PRODUCTS ================= */
+/* Get all products */
 const escapeRegex = (value) =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -77,10 +105,16 @@ const getAllProducts = asyncHandler(async (req, res) => {
     filter.name = { $regex: escapeRegex(String(search).trim()), $options: "i" };
   }
 
-  if (minPrice || maxPrice) {
-    filter.price = {};
-    if (minPrice) filter.price.$gte = Number(minPrice);
-    if (maxPrice) filter.price.$lte = Number(maxPrice);
+  // Keep a zero floor: 0 is a valid minimum, unlike undefined.
+  const priceFilter = {};
+  if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
+    priceFilter.$gte = Number(minPrice);
+  }
+  if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
+    priceFilter.$lte = Number(maxPrice);
+  }
+  if (Object.keys(priceFilter).length > 0) {
+    filter.price = priceFilter;
   }
 
   const numericLimit = Number(limit);
@@ -113,7 +147,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
   res.status(200).json(value);
 });
 
-/* ================= GET SINGLE PRODUCT ================= */
+/* Get single product */
 const getSingleProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -143,16 +177,51 @@ const getSingleProduct = asyncHandler(async (req, res) => {
   res.status(200).json(value);
 });
 
-/* ================= UPDATE PRODUCT ================= */
+/* Update product */
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   let updateData = { ...req.body };
 
+  // Empty/null stock from the form means "unlimited": clear tracking.
+  const shouldClearStock =
+    updateData.stock === "" || updateData.stock === null;
+  if (shouldClearStock) {
+    delete updateData.stock;
+  }
+
   const existingProduct = await Product.findOne({ _id: id, isDeleted: false });
 
   if (!existingProduct) {
     return res.status(404).json({ message: "Product not found" });
+  }
+
+  // Block renaming into a combo another product already uses.
+  if (
+    updateData.name !== undefined ||
+    updateData.category !== undefined ||
+    updateData.color !== undefined
+  ) {
+    const duplicate = await findVariantDuplicate({
+      name: updateData.name ?? existingProduct.name,
+      category: updateData.category ?? existingProduct.category,
+      color: updateData.color ?? existingProduct.color,
+      excludeId: id,
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        message: "A product with this name, category and color already exists.",
+      });
+    }
+  }
+
+  // Old products without a SKU get one assigned on their next update.
+  if (!existingProduct.sku) {
+    updateData.sku = await generateSku(
+      updateData.name ?? existingProduct.name,
+      updateData.color ?? existingProduct.color
+    );
   }
 
   let existingImages = [];
@@ -187,15 +256,17 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   delete updateData.existingImages;
 
-  const product = await Product.findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
+  // Clearing the stock field unsets tracking (same as the update-stock endpoint).
+  const update = shouldClearStock
+    ? { $unset: { stock: "" }, $set: updateData }
+    : updateData;
+
+  const product = await Product.findOneAndUpdate({ _id: id, isDeleted: false }, update, {
     new: true,
     runValidators: true,
   });
 
-  // Delete any Cloudinary images that were removed in this update.
-  // Only runs when the update actually changed the image list, so a
-  // name/price-only update can never delete still-referenced images.
-  // (uploadToCloudinary.delete safely ignores non-Cloudinary URLs.)
+  // Remove Cloudinary images dropped in this update (only when the list changed).
   const removedImages = imagesWereUpdated
     ? (existingProduct.images || []).filter(
         (image) => !finalImages.includes(image)
@@ -226,7 +297,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 
 
-/* ================= UPDATE STOCK ================= */
+/* Update stock */
 const updateStock = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { stock } = req.body;
@@ -258,7 +329,7 @@ const updateStock = asyncHandler(async (req, res) => {
   });
 });
 
-/* ================= DELETE PRODUCT ================= */
+/* Delete product */
 const deleteProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -277,7 +348,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Product deleted successfully" });
 });
 
-/* ================= RELATED PRODUCTS ================= */
+/* Related products */
 const getRelatedProducts = asyncHandler(async (req, res) => {
   const { id } = req.params;
 

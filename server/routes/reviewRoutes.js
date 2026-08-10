@@ -8,16 +8,15 @@ const { postReviewSchema } = require("../validation/reviewValidator");
 const { verifyToken } = require("../utils/helper");
 const { writeLimiter } = require("../middlewares/rateLimiter");
 
-//post a review
+// Post a review
 router.post("/post-review", writeLimiter, validateBody(postReviewSchema), verifyToken, reviewCtrls.postReview);
 
-//total reviews for a product
+// Total reviews for a product
 router.get("/total-reviews", reviewCtrls.getTotalReviews);
 
-//get reviews by user
+// Get reviews by user
 router.get(
   "/:userId",
-  // validateParams,
   verifyToken,
   reviewCtrls.getUserReviews,
 );

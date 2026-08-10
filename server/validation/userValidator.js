@@ -32,8 +32,7 @@ const updateUserSchema = Joi.object({
   'object.unknown': 'Invalid field provided.',
 });
 
-// Schema for the avatar/profile upload route (multipart form-data).
-// Only the fields the controller accepts are allowed.
+// Avatar/profile upload schema; only the fields the controller accepts are allowed.
 const updateUserProfileSchema = Joi.object({
   username: Joi.string()
     .trim()

@@ -1,4 +1,3 @@
-// src/store/cartSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -19,8 +18,7 @@ const cartSlice = createSlice({
       const productId = payload._id;
       const existing = state.products.find((p) => p._id === productId);
 
-      // Never add an out-of-stock product (defense in depth — buttons on the
-      // storefront are already disabled when stock reaches zero).
+      // Never add an out-of-stock product (buttons are already disabled, but be safe)
       const payloadTracksStock =
         payload.stock !== undefined && payload.stock !== null;
       if (!existing && payloadTracksStock && Number(payload.stock) <= 0) {
@@ -28,7 +26,7 @@ const cartSlice = createSlice({
       }
 
       if (existing) {
-        // Never exceed tracked stock; products without stock are unlimited.
+        // Never exceed tracked stock; no stock field means unlimited.
         const maxQty =
           payload.stock !== undefined && payload.stock !== null
             ? Number(payload.stock)
@@ -41,7 +39,7 @@ const cartSlice = createSlice({
         state.products.push({ ...payload, quantity: 1 });
       }
 
-      // recompute derived values
+      // Recompute derived values
       state.selectedItems = setSelectedItems(state);
       state.totalPrice = setTotalPrice(state);
       state.tax = setTax(state);
@@ -55,7 +53,7 @@ const cartSlice = createSlice({
   if (!product) return;
 
   if (type === "increment") {
-    // Never exceed tracked stock; products without stock are unlimited.
+    // Never exceed tracked stock; no stock field means unlimited.
     const maxQty =
       product.stock !== undefined && product.stock !== null
         ? Number(product.stock)
@@ -93,7 +91,7 @@ const cartSlice = createSlice({
   },
 });
 
-// utilities
+// Utilities
 export const setSelectedItems = (state) =>
   state.products.reduce((total, product) => total + (product.quantity || 0), 0);
 
@@ -104,7 +102,7 @@ export const setTax = (state) => setTotalPrice(state) * (state.taxRate ?? 0);
 
 export const setGrandTotal = (state) => setTotalPrice(state) + setTax(state);
 
-// selectors (convenience)
+// Selectors
 export const selectCart = (state) => state.cart;
 export const selectProducts = (state) => state.cart.products;
 

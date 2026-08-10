@@ -1,5 +1,4 @@
-// Appends Cloudinary delivery transforms (width, auto quality/format) to a
-// Cloudinary URL. Non-Cloudinary URLs (blobs, local paths) are returned as-is.
+// Adds Cloudinary transforms to a URL; non-Cloudinary URLs pass through.
 export const getOptimizedImageUrl = (url, width = 800) => {
   if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) {
     return url;
@@ -14,8 +13,7 @@ export const getOptimizedImageUrl = (url, width = 800) => {
 
   const rest = url.slice(index + marker.length);
 
-  // URLs that already carry a transform (e.g. new uploads with server-side
-  // optimization baked in) are left untouched to avoid stacking transforms.
+  // Skip URLs that already carry a transform so we never stack them.
   const hasTransform = /^[a-z0-9_,]+,/.test(rest) || /^[a-z0-9_]+\/w_/.test(rest);
   if (hasTransform) {
     return url;

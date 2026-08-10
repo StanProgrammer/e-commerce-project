@@ -13,7 +13,7 @@ const TrendingPrds = () => {
   const products = data?.products ?? [];
 
   const handleLoadMore = () => {
-    // If already showing all -> reset to 8
+    // Reset back to 8 when everything is already shown
     if (visibleProducts >= products.length) {
       setVisibleProducts(8)
     } else {

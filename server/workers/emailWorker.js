@@ -1,5 +1,4 @@
-// Processor for the "emails" queue. Reuses the existing Nodemailer helpers in
-// utils/email.js so job handling and inline sending behave identically.
+// Processor for the "emails" queue; reuses the Nodemailer helpers in utils/email.js.
 const {
   sendOrderConfirmationEmail,
   sendOrderStatusEmail,
@@ -19,7 +18,7 @@ module.exports = async (job) => {
     throw new Error(`Unknown email job: ${job.name}`);
   }
 
-  // Throwing makes BullMQ retry the job with exponential backoff.
+  // Throwing lets BullMQ retry with exponential backoff.
   await handler(job);
 
   return { ok: true };

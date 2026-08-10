@@ -34,12 +34,8 @@ const createProductSchema = Joi.object({
   rating: Joi.number().min(0).max(5).precision(1).optional().messages({
     "number.max": "Rating cannot exceed 5.",
   }),
-  // author: Joi.string().length(24).hex().required().messages({
-  //   "string.length": "Author must be a valid ObjectId",
-  //   "string.hex": "Author must be a valid ObjectId",
-  // }),
 })
-  .unknown(false) //uncomment this line later to disallow unknown fields
+  .unknown(false) // Turn on later to reject unknown fields
   .messages({
     "object.unknown": "Invalid field provided.",
   });
@@ -52,7 +48,7 @@ const updateProductSchema = Joi.object({
   description: Joi.string().trim().min(10).max(1000).optional(),
   price: Joi.number().positive().precision(2).optional(),
   oldPrice: Joi.number().positive().precision(2).optional(),
-  stock: Joi.number().integer().min(0).max(1000000).optional().empty("").messages({
+  stock: Joi.number().integer().min(0).max(1000000).optional().allow(null, "").messages({
     "number.base": "Stock must be a number.",
     "number.integer": "Stock must be a whole number.",
     "number.min": "Stock cannot be negative.",
@@ -73,8 +69,7 @@ const updateProductSchema = Joi.object({
   'object.unknown': 'Invalid field provided',
 });
 
-// Dedicated quick-stock-update schema (JSON endpoint). Accepts a non-negative
-// whole number, or null to clear tracking (unlimited stock).
+// Quick stock update: non-negative whole number, or null to clear tracking.
 const updateStockSchema = Joi.object({
   stock: Joi.number().integer().min(0).max(1000000).allow(null).required().messages({
     "number.base": "Stock must be a number.",
@@ -99,8 +94,8 @@ const getAllProductsQuerySchema = Joi.object({
   category: Joi.string().optional(),
   color: Joi.string().optional(),
   search: Joi.string().trim().max(100).optional(),
-  minPrice: Joi.number().positive().optional(),
-  maxPrice: Joi.number().positive().optional(),
+  minPrice: Joi.number().min(0).optional(),
+  maxPrice: Joi.number().min(0).optional(),
   page: Joi.number().integer().min(1).optional(),
   limit: Joi.number().integer().min(1).max(100).optional(),
 });

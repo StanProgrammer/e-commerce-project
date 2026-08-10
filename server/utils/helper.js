@@ -2,12 +2,61 @@ const jwt = require("jsonwebtoken");
 const { config, requireEnv } = require("../config/env");
 const User = require("../models/userModel");
 
-// Derive the default cookie lifetime from the JWT expiry (e.g. "7d" -> 7 days)
-// so the cookie never outlives the token.
-const parseDaysFromExpiry = (value) => {
-  const match = String(value || "").match(/^(\d+)d$/i);
-  return match ? Number(match[1]) : 7;
+// Cookie lifetime matches the JWT expiry so the cookie never outlives the token.
+const EXPIRY_UNIT_MS = {
+  ms: 1,
+  millisecond: 1,
+  milliseconds: 1,
+  s: 1000,
+  sec: 1000,
+  secs: 1000,
+  second: 1000,
+  seconds: 1000,
+  m: 60 * 1000,
+  min: 60 * 1000,
+  mins: 60 * 1000,
+  minute: 60 * 1000,
+  minutes: 60 * 1000,
+  h: 60 * 60 * 1000,
+  hr: 60 * 60 * 1000,
+  hrs: 60 * 60 * 1000,
+  hour: 60 * 60 * 1000,
+  hours: 60 * 60 * 1000,
+  d: 24 * 60 * 60 * 1000,
+  day: 24 * 60 * 60 * 1000,
+  days: 24 * 60 * 60 * 1000,
+  w: 7 * 24 * 60 * 60 * 1000,
+  week: 7 * 24 * 60 * 60 * 1000,
+  weeks: 7 * 24 * 60 * 60 * 1000,
+  mo: 30 * 24 * 60 * 60 * 1000,
+  month: 30 * 24 * 60 * 60 * 1000,
+  months: 30 * 24 * 60 * 60 * 1000,
+  y: 365 * 24 * 60 * 60 * 1000,
+  year: 365 * 24 * 60 * 60 * 1000,
+  years: 365 * 24 * 60 * 60 * 1000,
 };
+
+// Parse a jsonwebtoken expiresIn value ("7d", "8h", "90m", "3600", "2 days") into ms.
+const parseExpiryToMs = (value) => {
+  const input = String(value || "").trim().toLowerCase();
+  if (!input) return null;
+
+  // Bare numbers mean seconds.
+  if (/^\d+(\.\d+)?$/.test(input)) {
+    return Math.round(Number(input) * 1000);
+  }
+
+  const match = input.match(
+    /^(\d+(?:\.\d+)?)\s*(milliseconds?|seconds?|secs?|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|ms|s|m|h|d|w|mo|y)$/
+  );
+
+  if (!match) return null;
+
+  const unitMs = EXPIRY_UNIT_MS[match[2]];
+  return unitMs ? Math.round(Number(match[1]) * unitMs) : null;
+};
+
+const DEFAULT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const buildCookieOptions = () => {
   const sameSite = String(config.cookie.sameSite || "lax").toLowerCase();
@@ -16,7 +65,7 @@ const buildCookieOptions = () => {
     httpOnly: true,
     secure,
     sameSite,
-    maxAge: 1000 * 60 * 60 * 24 * parseDaysFromExpiry(config.jwtExpires),
+    maxAge: parseExpiryToMs(config.jwtExpires) ?? DEFAULT_MAX_AGE_MS,
   };
 
   if (config.cookie.domain) {
@@ -133,6 +182,7 @@ module.exports = {
   generateToken,
   cookieOptions,
   clearCookieOptions,
+  parseExpiryToMs,
   optionalVerifyToken,
   verifyToken,
 };
