@@ -1,8 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import outwear from '../../assets/outwear.png'
-import casual from '../../assets/casual.png'
-import formal from '../../assets/formal.png'
+import outwear from '../../assets/outwear.webp'
+import casual from '../../assets/casual.webp'
+import formal from '../../assets/formal.webp'
 const cards = [
     {
         id: 1,

@@ -1,8 +1,8 @@
 import React from 'react'
-import Accessories from '../../assets/accessories.jpg'
-import Clothes from '../../assets/clothes.jpg'
-import Jewellery from '../../assets/jewellery.jpg'
-import Cosmetics from '../../assets/cosmetics.jpg'
+import Accessories from '../../assets/accessories.webp'
+import Clothes from '../../assets/clothes.webp'
+import Jewellery from '../../assets/jewellery.webp'
+import Cosmetics from '../../assets/cosmetics.webp'
 import { Link } from 'react-router-dom'
 const Categories = () => {
     const categories = [

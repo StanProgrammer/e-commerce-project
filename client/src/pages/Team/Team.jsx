@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import insta1 from "../../assets/instagram-1.jpg";
-import insta2 from "../../assets/profile.png";
-import insta3 from "../../assets/instagram-3.jpg";
-import insta4 from "../../assets/instagram-4.jpg";
+import insta1 from "../../assets/instagram-1.webp";
+import insta2 from "../../assets/profile.webp";
+import insta3 from "../../assets/instagram-3.webp";
+import insta4 from "../../assets/instagram-4.webp";
 
 const teamMembers = [
   {
