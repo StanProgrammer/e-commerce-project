@@ -226,6 +226,7 @@ describe("POST /api/orders/webhook", () => {
       data: { object: { id: "cs_complete" } },
     });
     client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
+    Product.findOne.mockResolvedValue({ _id: "p1", stock: 5 });
     Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     const res = await request(app)
@@ -243,6 +244,54 @@ describe("POST /api/orders/webhook", () => {
     );
   });
 
+  it("does not cancel orders that contain unlimited-stock products", async () => {
+    const client = getStripeClient();
+    client.webhooks.constructEvent.mockReturnValue({
+      type: "checkout.session.completed",
+      data: { object: { id: "cs_complete" } },
+    });
+    client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
+    // The product has NO stock field (unlimited): the order must be recorded
+    // as paid and must NOT be canceled/refunded, and stock must not be
+    // decremented.
+    Product.findOne.mockResolvedValue({ _id: "p1" });
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .post("/api/orders/webhook")
+      .set("stripe-signature", "sig")
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(Order.__orders).toHaveLength(1);
+    expect(Order.__orders[0].status).toBe("processing");
+    expect(Order.__orders[0].stockRestored).not.toBe(true);
+    // Unlimited products are never decremented (no stock write happens at all).
+    expect(Product.updateOne).not.toHaveBeenCalled();
+  });
+
+  it("treats products with null stock as unlimited too", async () => {
+    const client = getStripeClient();
+    client.webhooks.constructEvent.mockReturnValue({
+      type: "checkout.session.completed",
+      data: { object: { id: "cs_complete" } },
+    });
+    client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
+    Product.findOne.mockResolvedValue({ _id: "p1", stock: null });
+    Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
+
+    const res = await request(app)
+      .post("/api/orders/webhook")
+      .set("stripe-signature", "sig")
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(Order.__orders).toHaveLength(1);
+    expect(Order.__orders[0].status).toBe("processing");
+    expect(Order.__orders[0].stockRestored).not.toBe(true);
+    expect(Product.updateOne).not.toHaveBeenCalled();
+  });
+
   it("cancels the order and restores stock when stock is drained before payment", async () => {
     const client = getStripeClient();
     client.webhooks.constructEvent.mockReturnValue({
@@ -252,6 +301,7 @@ describe("POST /api/orders/webhook", () => {
     client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
     // Decrement fails (a concurrent checkout took the last unit); the
     // compensating restore succeeds.
+    Product.findOne.mockResolvedValue({ _id: "p1", stock: 1 });
     Product.updateOne.mockResolvedValueOnce({ modifiedCount: 0 });
     Product.updateOne.mockResolvedValueOnce({ modifiedCount: 1 });
 
@@ -273,6 +323,7 @@ describe("POST /api/orders/webhook", () => {
       data: { object: { id: "cs_complete" } },
     });
     client.checkout.sessions.retrieve.mockResolvedValue(paidSession);
+    Product.findOne.mockResolvedValue({ _id: "p1", stock: 5 });
     Product.updateOne.mockResolvedValue({ modifiedCount: 1 });
 
     await request(app)

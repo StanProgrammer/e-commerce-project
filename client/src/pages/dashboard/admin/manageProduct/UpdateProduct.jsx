@@ -275,6 +275,9 @@ await updateProduct({ id, formData }).unwrap();
   label="Add New Images (optional)"
   setImage={setImages}
   existingImages={existingImages} // REQUIRED
+  onRemoveExisting={(url) =>
+    setExistingImages((prev) => prev.filter((existingUrl) => existingUrl !== url))
+  }
 />
 
           {/* Buttons */}

@@ -6,40 +6,36 @@ const UploadImage = ({
   setImage,
   error,
   resetTrigger,
-  existingImages = [], // NEW
+  existingImages = [], 
+  onRemoveExisting, 
 }) => {
-  const [preview, setPreview] = useState([]);
+  
+  const [newPreviews, setNewPreviews] = useState([]);
   const fileInputRef = useRef(null);
   // Keep the latest preview list in a ref so effects that revoke blob URLs
   // (reset / unmount) do not need to re-run whenever preview changes.
-  const previewRef = useRef(preview);
+  const newPreviewsRef = useRef(newPreviews);
 
   useEffect(() => {
-    previewRef.current = preview;
-  }, [preview]);
+    newPreviewsRef.current = newPreviews;
+  }, [newPreviews]);
 
   const MAX_SIZE = 10 * 1024 * 1024;
   const MAX_FILES = 5;
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-  // Load existing images into preview
-  useEffect(() => {
-    if (existingImages.length > 0) {
-      setPreview(existingImages); // URLs from backend
-    }
-  }, [existingImages]);
+  // Display order: existing images first, then newly added previews.
+  const displayedImages = [...existingImages, ...newPreviews];
 
   // Reset from parent
   useEffect(() => {
     if (resetTrigger) {
-      previewRef.current.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
+      newPreviewsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
       });
-      previewRef.current = [];
+      newPreviewsRef.current = [];
 
-      setPreview([]);
+      setNewPreviews([]);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -50,10 +46,8 @@ const UploadImage = ({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      previewRef.current.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
+      newPreviewsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
       });
     };
   }, []);
@@ -62,7 +56,7 @@ const UploadImage = ({
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    if (preview.length + files.length > MAX_FILES) {
+    if (displayedImages.length + files.length > MAX_FILES) {
       toast.error("Maximum 5 images allowed");
       return;
     }
@@ -87,7 +81,7 @@ const UploadImage = ({
 
     if (!validFiles.length) return;
 
-    setPreview((prev) => [...prev, ...previewUrls]);
+    setNewPreviews((prev) => [...prev, ...previewUrls]);
     setImage((prev) => [...prev, ...validFiles]);
 
     if (fileInputRef.current) {
@@ -96,20 +90,27 @@ const UploadImage = ({
   };
 
   const handleRemove = (index) => {
-    setPreview((prev) => {
+    // The index is into the combined preview (existing + new). Existing
+    // images live at the front of the list; report those removals to the
+    // parent so they are not re-submitted.
+    if (index < existingImages.length) {
+      onRemoveExisting?.(existingImages[index]);
+      return;
+    }
+
+    const newIndex = index - existingImages.length;
+
+    setNewPreviews((prev) => {
       const updated = [...prev];
-
-      // Only revoke blob URLs
-      if (updated[index].startsWith("blob:")) {
-        URL.revokeObjectURL(updated[index]);
+      if (updated[newIndex]?.startsWith("blob:")) {
+        URL.revokeObjectURL(updated[newIndex]);
       }
-
-      updated.splice(index, 1);
+      updated.splice(newIndex, 1);
       return updated;
     });
 
-    // Only removes newly added images (safe)
-    setImage((prev) => prev.filter((_, i) => i !== index));
+    // Only removes newly added images (safe) — same index space as newPreviews.
+    setImage((prev) => prev.filter((_, i) => i !== newIndex));
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -133,11 +134,11 @@ const UploadImage = ({
         onChange={handleFileChange}
       />
 
-      {/* 🔥 Preview FIRST */}
-      {preview.length > 0 && (
+      {/* Preview (existing images + new uploads) */}
+      {displayedImages.length > 0 && (
         <div className="flex flex-wrap gap-4 mb-4">
-          {preview.map((img, index) => (
-            <div key={index} className="relative w-fit">
+          {displayedImages.map((img, index) => (
+            <div key={img} className="relative w-fit">
               <img
                 src={img}
                 alt="preview"
@@ -157,7 +158,7 @@ const UploadImage = ({
       )}
 
       {/* Upload Box */}
-      {preview.length < MAX_FILES && (
+      {displayedImages.length < MAX_FILES && (
         <label
           htmlFor="fileUpload"
           className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"

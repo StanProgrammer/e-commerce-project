@@ -157,9 +157,24 @@ const extractShippingAddress = (session) => {
 
 // Decrement stock atomically. The query only matches products that track
 // stock AND have enough units, so a concurrent checkout can never oversell and
-// stock can never go negative. Returns true when the quantity was deducted
-// (products with missing/null stock are treated as unlimited and skipped).
+// stock can never go negative. Returns true when the quantity was deducted.
+// Products with missing/null stock are treated as unlimited: they are never
+// decremented and can never be oversold, so they return true without touching
+// the database.
 const decrementStock = async (productId, quantity) => {
+  const product = await Product.findOne(
+    { _id: productId, isDeleted: false },
+    { stock: 1 }
+  );
+
+  if (!product) {
+    return false;
+  }
+
+  if (product.stock === undefined || product.stock === null) {
+    return true;
+  }
+
   const result = await Product.updateOne(
     { _id: productId, stock: { $gte: quantity } },
     { $inc: { stock: -quantity } }
