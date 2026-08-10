@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { useGetBlogBySlugQuery } from "../../store/features/blogs/blogsApi";
 import formatBlogDate from "../../utils/formatBlogDate";
+import { getOptimizedImageUrl } from "../../utils/productImage";
 
 const BlogDetails = () => {
   const { slug } = useParams();
@@ -49,7 +50,7 @@ const BlogDetails = () => {
       </header>
 
       <img
-        src={blog.imageUrl}
+        src={getOptimizedImageUrl(blog.imageUrl, 1200)}
         alt={blog.title}
         className="mt-8 w-full aspect-[16/9] object-cover rounded-xl shadow-sm"
       />
