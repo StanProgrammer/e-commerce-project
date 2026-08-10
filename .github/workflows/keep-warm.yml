@@ -1,0 +1,24 @@
+name: Keep Render warm
+
+on:
+  schedule:
+    # Render free tier sleeps after ~15 min idle; ping every 10 min.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping /api/health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake the Render instance
+        run: |
+          # Retries absorb GitHub's scheduling jitter so the instance stays
+          # awake even when the workflow is a couple minutes late.
+          curl -fsS --retry 3 --retry-all-errors --retry-delay 5 --max-time 90 \
+            -o /dev/null \
+            "https://e-commerce-project-hzpl.onrender.com/api/health"

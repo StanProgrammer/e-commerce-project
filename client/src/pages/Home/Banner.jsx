@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import bannerImage from '../../assets/header.png'
+import bannerImage from '../../assets/header.webp'
 const Banner = () => {
   return (
     <div className='section__container header__container'>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import dealsImg from "../../assets/deals.png";
+import dealsImg from "../../assets/deals.webp";
 const DealsSection = () => {
   const getNextMonthStart = (now = new Date()) => {
     return new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0);
