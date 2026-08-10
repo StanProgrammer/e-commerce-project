@@ -1,12 +1,12 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import insta1 from "../assets/instagram-1.jpg";
-import insta2 from "../assets/instagram-2.jpg";
-import insta3 from "../assets/instagram-3.jpg";
-import insta4 from "../assets/instagram-4.jpg";
-import insta5 from "../assets/instagram-5.jpg";
-import insta6 from "../assets/instagram-6.jpg";
+import insta1 from "../assets/instagram-1.webp";
+import insta2 from "../assets/instagram-2.webp";
+import insta3 from "../assets/instagram-3.webp";
+import insta4 from "../assets/instagram-4.webp";
+import insta5 from "../assets/instagram-5.webp";
+import insta6 from "../assets/instagram-6.webp";
 const Footer = () => {
   const { user } = useSelector((state) => state.auth);
   const orderLinkLabel = user?.role === "admin" ? "Manage Orders" : "Track My Order";

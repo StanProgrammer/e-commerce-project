@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, NavLink } from "react-router-dom";
 import CartModal from "./CartModal";
-import avatar from "../assets/avatar.png";
+import avatar from "../assets/avatar.webp";
 import { useLogoutUserMutation } from "../store/features/auth/authApi";
 import { logout } from "../store/features/auth/authSlice";
 import toast from "react-hot-toast";

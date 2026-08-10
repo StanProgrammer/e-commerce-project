@@ -3,7 +3,7 @@ import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useLogoutUserMutation } from "../../store/features/auth/authApi";
 import { logout } from "../../store/features/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import avatar from "../../assets/avatar.png";
+import avatar from "../../assets/avatar.webp";
 import toast from "react-hot-toast";
 import getApiErrorMessage from "../../utils/getApiErrorMessage";
 

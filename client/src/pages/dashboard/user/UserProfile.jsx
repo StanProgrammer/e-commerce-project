@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import avatar from "../../../assets/avatar.png";
+import avatar from "../../../assets/avatar.webp";
 import { useUpdateProfileWithAvatarMutation } from "../../../store/features/auth/authApi";
 import { setUser } from "../../../store/features/auth/authSlice";
 import getApiErrorMessage from "../../../utils/getApiErrorMessage";

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import reviewAvatar from "../../../assets/avatar.png";
+import reviewAvatar from "../../../assets/avatar.webp";
 import Ratings from "../../../components/Ratings";
 import ReviewModal from "./ReviewModal";
 import { useGetMyOrdersQuery } from "../../../store/features/orders/orderApi";
